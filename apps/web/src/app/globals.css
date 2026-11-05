@@ -1,24 +1,136 @@
 @import "tailwindcss";
 
-@theme {
-  --color-canvas: #f7f6f2;
-  --color-surface: #ffffff;
-  --color-ink: #171717;
-  --color-muted: #77756f;
-  --color-faint: #a7a49c;
-  --color-accent: #b58a5a;
-  --color-accent-soft: #f1e9df;
-  --color-success: #527a60;
-  --color-success-soft: #e7efe9;
-  --color-warning: #c18b45;
-  --color-warning-soft: #f6ecdf;
-  --color-danger: #a4513f;
-  --color-danger-soft: #f5e6e2;
-  --color-line: #e7e4de;
-  --color-line-strong: #d6d2ca;
-  --color-night: #171715;
-  --color-night-2: #22221f;
+/*
+ * Colour tokens. Light is the default; dark applies when the visitor picks it, or
+ * when they chose "System" and their OS is dark. Warm charcoal — no blue or purple.
+ * Text pairs are chosen for WCAG AA contrast on their usual backgrounds:
+ *   dark  ink #f2f0eb on canvas #121211 ≈ 16.9:1 · muted #aaa79f ≈ 8.1:1 · faint #8c897f ≈ 5.4:1
+ *   light ink #171717 on canvas #f7f6f2 ≈ 16.6:1 · muted #6f6d67 ≈ 5.0:1 · faint #85827a ≈ 3.7:1 (secondary/large only)
+ */
+:root {
+  color-scheme: light;
+  --fm-canvas: #f7f6f2;
+  --fm-surface: #ffffff;
+  --fm-ink: #171717;
+  --fm-ink-hover: #2a2a28;
+  --fm-muted: #6f6d67;
+  --fm-faint: #85827a;
+  --fm-accent: #b58a5a;
+  --fm-accent-strong: #a67b4c;
+  --fm-accent-text: #8a643a;
+  --fm-on-accent: #ffffff;
+  --fm-accent-soft: #f1e9df;
+  --fm-success: #527a60;
+  --fm-success-soft: #e7efe9;
+  --fm-warning: #c18b45;
+  --fm-warning-text: #8f6328;
+  --fm-warning-soft: #f6ecdf;
+  --fm-danger: #a4513f;
+  --fm-danger-soft: #f5e6e2;
+  --fm-line: #e7e4de;
+  --fm-line-strong: #d6d2ca;
+  --fm-line-hover: #bdb8ae;
+  --fm-night: #171715;
+  --fm-night-2: #22221f;
+  --fm-paper: #f7f6f2;
+  --fm-paper-ink: #171717;
+  --fm-hover: #fcfbf9;
+  --fm-subtle: #f1efea;
+  --fm-tile: #eeebe5;
+  --fm-tile-hover: #e8e4dc;
+  --fm-highlight: #f6efe6;
+  --fm-table-head: #f9f8f5;
+  --fm-focus-row: #fcfaf6;
+  --fm-cta-band: #efece5;
+  --fm-hero: #e9e4da;
+  --fm-hero-text: #6e6a62;
+  --fm-hero-numeral: #ddd6ca;
+  --fm-brand-dim: #8f8b82;
+  --fm-figure: #efebe4;
+  --fm-figure-line: #b9b3a8;
+  --fm-grid: #e7e4de;
+  --fm-garment-edge-dark: rgba(0, 0, 0, 0.5);
+  --fm-skeleton-a: #efede8;
+  --fm-skeleton-b: #f6f5f1;
+}
 
+/* Dark values — written twice (system preference and explicit choice); keep both in sync. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fm-canvas: #121211; --fm-surface: #1a1a18; --fm-ink: #f2f0eb; --fm-ink-hover: #d9d6cf; --fm-muted: #aaa79f; --fm-faint: #8c897f;
+    --fm-accent: #cfa574; --fm-accent-strong: #dcb486; --fm-accent-text: #dcb486; --fm-on-accent: #171717; --fm-accent-soft: #2b2219;
+    --fm-success: #86b294; --fm-success-soft: #17231b; --fm-warning: #dba865; --fm-warning-text: #e6bd82; --fm-warning-soft: #2a2014;
+    --fm-danger: #e08f7b; --fm-danger-soft: #2c1814; --fm-line: #2b2a27; --fm-line-strong: #3d3c37; --fm-line-hover: #5a5852;
+    --fm-night: #0a0a09; --fm-night-2: #151513; --fm-hover: #20201d; --fm-subtle: #242320; --fm-tile: #1f1e1b; --fm-tile-hover: #272622;
+    --fm-highlight: #2b2219; --fm-table-head: #1e1e1b; --fm-focus-row: #1f1e1b; --fm-cta-band: #171715; --fm-hero: #1c1b18;
+    --fm-hero-text: #a39f96; --fm-hero-numeral: #272622; --fm-brand-dim: #8c897f; --fm-figure: #2b2a27; --fm-figure-line: #5c5a53;
+    --fm-grid: #232320; --fm-garment-edge-dark: rgba(255, 255, 255, 0.38); --fm-skeleton-a: #1f1e1b; --fm-skeleton-b: #2a2925;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fm-canvas: #121211; --fm-surface: #1a1a18; --fm-ink: #f2f0eb; --fm-ink-hover: #d9d6cf; --fm-muted: #aaa79f; --fm-faint: #8c897f;
+  --fm-accent: #cfa574; --fm-accent-strong: #dcb486; --fm-accent-text: #dcb486; --fm-on-accent: #171717; --fm-accent-soft: #2b2219;
+  --fm-success: #86b294; --fm-success-soft: #17231b; --fm-warning: #dba865; --fm-warning-text: #e6bd82; --fm-warning-soft: #2a2014;
+  --fm-danger: #e08f7b; --fm-danger-soft: #2c1814; --fm-line: #2b2a27; --fm-line-strong: #3d3c37; --fm-line-hover: #5a5852;
+  --fm-night: #0a0a09; --fm-night-2: #151513; --fm-hover: #20201d; --fm-subtle: #242320; --fm-tile: #1f1e1b; --fm-tile-hover: #272622;
+  --fm-highlight: #2b2219; --fm-table-head: #1e1e1b; --fm-focus-row: #1f1e1b; --fm-cta-band: #171715; --fm-hero: #1c1b18;
+  --fm-hero-text: #a39f96; --fm-hero-numeral: #272622; --fm-brand-dim: #8c897f; --fm-figure: #2b2a27; --fm-figure-line: #5c5a53;
+  --fm-grid: #232320; --fm-garment-edge-dark: rgba(255, 255, 255, 0.38); --fm-skeleton-a: #1f1e1b; --fm-skeleton-b: #2a2925;
+}
+
+/* Illustrations placed on the always-dark "night" panels use light line work in both themes. */
+.on-night {
+  --fm-figure: #efebe4;
+  --fm-figure-line: #b9b3a8;
+  --fm-ink: #f2f0eb;
+  --fm-muted: #aaa79f;
+  --fm-faint: #8c897f;
+  --fm-grid: transparent;
+}
+
+@theme inline {
+  --color-canvas: var(--fm-canvas);
+  --color-surface: var(--fm-surface);
+  --color-ink: var(--fm-ink);
+  --color-ink-hover: var(--fm-ink-hover);
+  --color-muted: var(--fm-muted);
+  --color-faint: var(--fm-faint);
+  --color-accent: var(--fm-accent);
+  --color-accent-strong: var(--fm-accent-strong);
+  --color-accent-text: var(--fm-accent-text);
+  --color-on-accent: var(--fm-on-accent);
+  --color-accent-soft: var(--fm-accent-soft);
+  --color-success: var(--fm-success);
+  --color-success-soft: var(--fm-success-soft);
+  --color-warning: var(--fm-warning);
+  --color-warning-text: var(--fm-warning-text);
+  --color-warning-soft: var(--fm-warning-soft);
+  --color-danger: var(--fm-danger);
+  --color-danger-soft: var(--fm-danger-soft);
+  --color-line: var(--fm-line);
+  --color-line-strong: var(--fm-line-strong);
+  --color-line-hover: var(--fm-line-hover);
+  --color-night: var(--fm-night);
+  --color-night-2: var(--fm-night-2);
+  --color-paper: var(--fm-paper);
+  --color-paper-ink: var(--fm-paper-ink);
+  --color-hover: var(--fm-hover);
+  --color-subtle: var(--fm-subtle);
+  --color-tile: var(--fm-tile);
+  --color-tile-hover: var(--fm-tile-hover);
+  --color-highlight: var(--fm-highlight);
+  --color-table-head: var(--fm-table-head);
+  --color-focus-row: var(--fm-focus-row);
+  --color-cta-band: var(--fm-cta-band);
+  --color-hero: var(--fm-hero);
+  --color-hero-text: var(--fm-hero-text);
+  --color-hero-numeral: var(--fm-hero-numeral);
+  --color-brand-dim: var(--fm-brand-dim);
+}
+
+@theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
   --font-data: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -95,7 +207,7 @@
     border-color: var(--color-line);
   }
   .skeleton {
-    background: linear-gradient(90deg, #efede8 0%, #f6f5f1 40%, #efede8 80%);
+    background: linear-gradient(90deg, var(--fm-skeleton-a) 0%, var(--fm-skeleton-b) 40%, var(--fm-skeleton-a) 80%);
     background-size: 200% 100%;
     animation: var(--animate-shimmer);
     border-radius: var(--radius-sm);

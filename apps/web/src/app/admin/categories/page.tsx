@@ -52,7 +52,7 @@ export default function CategoriesAdmin() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-[16px] font-semibold">{c.name} <span className="text-[12px] font-normal text-muted">· {c.garmentGroup}</span></h2>
                 <span className="flex items-center gap-3">
-                  <span className={cn("num text-[12.5px]", Math.abs(total - 1) > 0.01 ? "text-[#8f6328]" : "text-muted")}>Σ weights {total.toFixed(2)}</span>
+                  <span className={cn("num text-[12.5px]", Math.abs(total - 1) > 0.01 ? "text-warning-text" : "text-muted")}>Σ weights {total.toFixed(2)}</span>
                   <Button size="sm" onClick={() => save(c.id)} loading={saving === c.id}>Save</Button>
                 </span>
               </div>

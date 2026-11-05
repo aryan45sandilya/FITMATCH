@@ -43,7 +43,7 @@ function OkResult({ r, unit, context, footer }: { r: Ok; unit: Unit; context?: R
   return (
     <div className="overflow-hidden rounded-md border border-line bg-surface">
       {/* Headline */}
-      <div className="grid gap-6 bg-night p-6 text-canvas sm:p-8 md:grid-cols-[auto_1fr] md:gap-10">
+      <div className="grid gap-6 bg-night p-6 text-paper sm:p-8 md:grid-cols-[auto_1fr] md:gap-10">
         <div>
           <p className="text-[11px] font-semibold tracking-[0.16em] text-[#8a877f] uppercase">Your recommended size</p>
           <motion.p
@@ -199,7 +199,7 @@ function MeasurementRow({ m, unit, basis }: { m: PointResult; unit: Unit; basis:
 export function QualityText({ quality }: { quality?: string }) {
   if (!quality) return null;
   const q = QUALITY[quality as keyof typeof QUALITY];
-  return <span className={cn("text-[12.5px] font-semibold", q.tone === "success" ? "text-success" : q.tone === "warning" ? "text-[#8f6328]" : "text-danger")}>{q.label}</span>;
+  return <span className={cn("text-[12.5px] font-semibold", q.tone === "success" ? "text-success" : q.tone === "warning" ? "text-warning-text" : "text-danger")}>{q.label}</span>;
 }
 
 export function NoProfileCallout() {

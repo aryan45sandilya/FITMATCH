@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useSession } from "@/lib/session";
 import { LogoMark } from "../brand";
 import { Skeleton, cn } from "../ui/primitives";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: BarChart3, exact: true },
@@ -31,7 +32,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-canvas">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-night text-canvas">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-night text-paper">
         <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-6 px-4 sm:px-6">
           <Link href="/admin" className="flex items-center gap-2.5">
             <LogoMark inverse className="size-5" />
@@ -47,6 +48,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+          <ThemeToggle className="hidden border-white/15 bg-transparent sm:inline-flex [&_[aria-checked=false]]:text-[#a9a69e] [&_[aria-checked=true]]:bg-paper [&_[aria-checked=true]]:text-paper-ink" />
           <Link href="/app" className="hidden items-center gap-1.5 text-[12.5px] text-[#a9a69e] hover:text-white md:flex"><ArrowLeft className="size-3.5" /> App</Link>
         </div>
       </header>

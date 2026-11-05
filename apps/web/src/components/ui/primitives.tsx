@@ -12,11 +12,11 @@ type Variant = "primary" | "secondary" | "ghost" | "accent" | "inverse" | "dange
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-canvas hover:bg-[#2a2a28] active:bg-black",
+  primary: "bg-ink text-canvas hover:bg-ink-hover active:bg-ink-hover",
   secondary: "bg-surface text-ink border border-line-strong hover:border-ink",
   ghost: "text-ink hover:bg-ink/[0.04]",
-  accent: "bg-accent text-white hover:bg-[#a67b4c]",
-  inverse: "bg-canvas text-ink hover:bg-white",
+  accent: "bg-accent text-on-accent hover:bg-accent-strong",
+  inverse: "bg-paper text-paper-ink hover:bg-white",
   danger: "bg-surface text-danger border border-danger/40 hover:bg-danger-soft",
 };
 const sizes: Record<Size, string> = {
@@ -97,7 +97,7 @@ export function Field({
 
 const inputBase =
   "w-full h-11 rounded-sm border bg-surface px-3.5 text-ink placeholder:text-faint transition-colors duration-150 " +
-  "border-line-strong hover:border-[#bdb8ae] focus:border-ink focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-ink/8 " +
+  "border-line-strong hover:border-line-hover focus:border-ink focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-ink/8 " +
   "aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/10";
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; suffix?: string }>(
@@ -168,11 +168,11 @@ type Tone = "neutral" | "success" | "warning" | "danger" | "accent" | "muted" | 
 const tones: Record<Tone, string> = {
   neutral: "bg-canvas text-ink border-line",
   success: "bg-success-soft text-success border-success/15",
-  warning: "bg-warning-soft text-[#8f6328] border-warning/20",
+  warning: "bg-warning-soft text-warning-text border-warning/20",
   danger: "bg-danger-soft text-danger border-danger/15",
-  accent: "bg-accent-soft text-[#8a643a] border-accent/20",
-  muted: "bg-[#f1efea] text-muted border-line",
-  dark: "bg-night text-canvas border-night",
+  accent: "bg-accent-soft text-accent-text border-accent/20",
+  muted: "bg-subtle text-muted border-line",
+  dark: "bg-night text-paper border-night",
 };
 
 export function Badge({ tone = "neutral", children, className, dot }: { tone?: Tone; children: React.ReactNode; className?: string; dot?: boolean }) {

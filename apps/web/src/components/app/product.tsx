@@ -16,7 +16,7 @@ import { useToast } from "../ui/toast";
 export function ProductImage({ product, className, sizes = "(min-width: 1024px) 25vw, 50vw", priority }: { product: Pick<Product, "imageUrls" | "colorway" | "name"> & { category: { slug: string } }; className?: string; sizes?: string; priority?: boolean }) {
   const url = product.imageUrls[0];
   return (
-    <div className={cn("relative overflow-hidden bg-[#EEEBE5]", className)}>
+    <div className={cn("relative overflow-hidden bg-tile", className)}>
       {url ? (
         url.includes("res.cloudinary.com") ? (
           <Image src={url} alt={product.name} fill sizes={sizes} className="object-cover" priority={priority} />
@@ -42,7 +42,7 @@ export function RecPill({ rec, compact }: { rec?: RecommendationSummary | null; 
       <div className="flex items-center gap-2">
         <span className="num grid h-7 min-w-9 place-items-center rounded-xs bg-ink px-2 text-[13px] font-semibold text-canvas">{rec.recommendedSize}</span>
         {!compact && (
-          <span className={cn("text-[12px] font-semibold", q.tone === "success" ? "text-success" : q.tone === "warning" ? "text-[#8f6328]" : "text-danger")}>{q.label}</span>
+          <span className={cn("text-[12px] font-semibold", q.tone === "success" ? "text-success" : q.tone === "warning" ? "text-warning-text" : "text-danger")}>{q.label}</span>
         )}
       </div>
     );

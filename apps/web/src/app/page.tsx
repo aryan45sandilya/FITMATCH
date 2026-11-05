@@ -94,7 +94,7 @@ export default function LandingPage() {
           <div className="relative mx-auto max-w-[1320px] overflow-hidden">
             <div className="scrollbar-none flex gap-12 overflow-x-auto px-4 py-6 sm:px-6 lg:justify-between lg:px-10">
               {BRANDS.map((b) => (
-                <span key={b} className="shrink-0 text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap text-[#9a968d]">
+                <span key={b} className="shrink-0 text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap text-brand-dim">
                   {b}
                 </span>
               ))}
@@ -174,7 +174,7 @@ export default function LandingPage() {
                   <span className="num text-[12px] font-semibold text-accent">STEP 03</span>
                   <h3 className="mt-3 text-[20px] font-semibold tracking-[-0.015em]">Get your recommendation</h3>
                   <p className="mt-2 text-[14.5px] leading-relaxed text-muted">A size, an alternative, and exactly why — measurement by measurement.</p>
-                  <div className="mt-8 flex aspect-[4/3] flex-col justify-between rounded-sm bg-night p-5 text-canvas">
+                  <div className="mt-8 flex aspect-[4/3] flex-col justify-between rounded-sm bg-night p-5 text-paper">
                     <div className="flex items-start justify-between">
                       <span className="text-[11px] tracking-[0.14em] text-[#a9a69e] uppercase">Levi&apos;s · Straight jean</span>
                       <span className="rounded-xs bg-success/25 px-1.5 py-0.5 text-[10.5px] text-[#a9cdb3]">Excellent</span>
@@ -212,7 +212,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Comparison preview (dark) ────────────────────── */}
-        <section className="bg-night text-canvas">
+        <section className="bg-night text-paper">
           <div className="mx-auto grid max-w-[1320px] gap-12 px-4 py-20 sm:px-6 md:py-28 lg:grid-cols-[1fr_1.3fr] lg:gap-20 lg:px-10">
             <Reveal>
               <p className="mb-4 text-[11px] font-semibold tracking-[0.16em] text-[#8a877f] uppercase">Cross-brand comparison</p>
@@ -263,7 +263,7 @@ export default function LandingPage() {
             {BRANDS.map((b, i) => (
               <Reveal key={b} delay={(i % 5) * 0.04} className="bg-surface">
                 <Link href="/brands" className="group flex aspect-[5/3] items-center justify-center p-4 transition-colors hover:bg-canvas">
-                  <span className="text-center text-[17px] font-bold tracking-[-0.02em] text-[#6f6b63] transition-colors group-hover:text-ink sm:text-[19px]">{b}</span>
+                  <span className="text-center text-[17px] font-bold tracking-[-0.02em] text-muted transition-colors group-hover:text-ink sm:text-[19px]">{b}</span>
                 </Link>
               </Reveal>
             ))}
@@ -272,7 +272,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Final CTA ────────────────────────────────────── */}
-        <section className="border-t border-line bg-[#EFECE5]">
+        <section className="border-t border-line bg-cta-band">
           <div className="mx-auto flex max-w-[1320px] flex-col items-start gap-8 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24 lg:px-10">
             <Reveal>
               <h2 className="font-serif text-[44px] leading-[1.02] tracking-[-0.025em] sm:text-[64px]">

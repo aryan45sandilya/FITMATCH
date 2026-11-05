@@ -278,7 +278,7 @@ function RowDetail({ row, unit, category }: { row: Row; unit: Unit; category: st
                 );
               })}
             </ul>
-            {res.warnings.length > 0 && <ul className="mt-3 space-y-1 text-[12.5px] text-[#8f6328]">{res.warnings.map((w) => <li key={w}>• {w}</li>)}</ul>}
+            {res.warnings.length > 0 && <ul className="mt-3 space-y-1 text-[12.5px] text-warning-text">{res.warnings.map((w) => <li key={w}>• {w}</li>)}</ul>}
           </>
         ) : (
           <p className="text-[13.5px] text-muted">{res.message}</p>

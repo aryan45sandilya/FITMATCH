@@ -276,7 +276,7 @@ export function MeasurementWizard() {
               <BodyDiagram focus={focus} values={draft.measurements} unit={unit} />
             </div>
             {focus && pointMap.get(focus) && (step === 1 || step === 2) && (
-              <div className="rounded-md bg-night p-5 text-canvas">
+              <div className="rounded-md bg-night p-5 text-paper">
                 <p className="text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">How to measure · {MEASUREMENT_LABEL[focus]}</p>
                 <p className="mt-2 text-[14px] leading-relaxed text-[#d4d1ca]">{pointMap.get(focus)!.howToMeasure}</p>
               </div>
@@ -426,7 +426,7 @@ function MeasureStep({
           const missingRequired = needed.length > 0 && draft.measurements[k] === undefined;
           const open = openHelp === k;
           return (
-            <li key={k} className={cn("p-4 transition-colors sm:p-5", focus === k && "bg-[#fcfaf6]")} onFocusCapture={() => setFocus(k)} onMouseEnter={() => setFocus(k)}>
+            <li key={k} className={cn("p-4 transition-colors sm:p-5", focus === k && "bg-focus-row")} onFocusCapture={() => setFocus(k)} onMouseEnter={() => setFocus(k)}>
               <div className="grid gap-3 sm:grid-cols-[1fr_200px] sm:items-start sm:gap-6">
                 <div className="min-w-0">
                   <label htmlFor={`m-${k}`} className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
@@ -561,11 +561,11 @@ function SummaryStep({
       )}
 
       <div className="overflow-hidden rounded-md border border-line bg-surface">
-        <div className="flex flex-col gap-4 bg-night p-5 text-canvas sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 bg-night p-5 text-paper sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <label htmlFor="sum-name" className="text-[11px] font-semibold tracking-[0.16em] text-[#8a877f] uppercase">Profile</label>
             <input id="sum-name" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="My profile" maxLength={60}
-              className="mt-0.5 block w-full bg-transparent text-[22px] font-semibold tracking-[-0.02em] text-canvas outline-none placeholder:text-[#77756f]" />
+              className="mt-0.5 block w-full bg-transparent text-[22px] font-semibold tracking-[-0.02em] text-paper outline-none placeholder:text-[#8c897f]" />
           </div>
           <dl className="flex gap-6 text-[13px]">
             <div><dt className="text-[#8a877f]">Height</dt><dd className="num font-semibold">{formatHeight(draft.heightCm, unit)}</dd></div>

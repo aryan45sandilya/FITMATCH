@@ -15,7 +15,7 @@ const socials = [
 
 export function SiteFooter() {
   return (
-    <footer className="bg-night text-canvas">
+    <footer className="bg-night text-paper">
       <div className="mx-auto max-w-[1320px] px-4 pt-16 pb-10 sm:px-6 lg:px-10">
         <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-xs">

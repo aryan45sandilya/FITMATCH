@@ -22,19 +22,19 @@ const brands = [
 /** Editorial composition: a croquis study in neutral clothing with live measurement annotations. */
 export function HeroVisual() {
   return (
-    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md bg-[#E9E4DA] sm:aspect-[5/6] lg:aspect-[4/5]">
+    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md bg-hero sm:aspect-[5/6] lg:aspect-[4/5]">
       {/* Editorial frame marks */}
-      <div className="absolute inset-x-5 top-5 flex items-start justify-between text-[10px] tracking-[0.18em] text-[#6e6a62] uppercase sm:inset-x-7 sm:top-7">
+      <div className="absolute inset-x-5 top-5 flex items-start justify-between text-[10px] tracking-[0.18em] text-hero-text uppercase sm:inset-x-7 sm:top-7">
         <span>Fit study — No. 04</span>
         <span className="num hidden sm:inline">FM / FW26</span>
       </div>
-      <div className="absolute inset-x-5 bottom-5 flex items-end justify-between text-[10px] tracking-[0.18em] text-[#6e6a62] uppercase sm:inset-x-7 sm:bottom-7">
+      <div className="absolute inset-x-5 bottom-5 flex items-end justify-between text-[10px] tracking-[0.18em] text-hero-text uppercase sm:inset-x-7 sm:bottom-7">
         <span>One profile</span>
         <span>Ten brands</span>
       </div>
 
       {/* Large serif backdrop numeral */}
-      <div aria-hidden className="pointer-events-none absolute -right-6 top-10 select-none font-serif text-[220px] leading-none text-[#ddd6ca] italic sm:text-[300px]">
+      <div aria-hidden className="pointer-events-none absolute -right-6 top-10 select-none font-serif text-[220px] leading-none text-hero-numeral italic sm:text-[300px]">
         M
       </div>
 
@@ -83,12 +83,12 @@ export function HeroVisual() {
               />
               <circle cx={ax} cy={ay} r="2.2" fill="#B58A5A" />
               <path d={`M${ax} ${ay} L${lx + (c.side === "right" ? -6 : 6)} ${ay}`} stroke="#B58A5A" strokeWidth="0.5" />
-              <text x={lx} y={ay - 2} textAnchor={c.side === "right" ? "start" : "end"} fontSize="8" letterSpacing="1.2" fill="#6e6a62" style={{ textTransform: "uppercase" }}>
+              <text x={lx} y={ay - 2} textAnchor={c.side === "right" ? "start" : "end"} fontSize="8" letterSpacing="1.2" style={{ textTransform: "uppercase", fill: "var(--fm-hero-text)" }}>
                 {c.label}
               </text>
-              <text x={lx} y={ay + 10} textAnchor={c.side === "right" ? "start" : "end"} fontSize="12" fontWeight="600" fill="#171717" className="num">
+              <text x={lx} y={ay + 10} textAnchor={c.side === "right" ? "start" : "end"} fontSize="12" fontWeight="600" style={{ fill: "var(--fm-ink)" }} className="num">
                 {c.value}
-                <tspan fontSize="8" fill="#77756F" dx="2">cm</tspan>
+                <tspan fontSize="8" style={{ fill: "var(--fm-muted)" }} dx="2">cm</tspan>
               </text>
             </motion.g>
           );
@@ -100,7 +100,7 @@ export function HeroVisual() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.2, duration: 0.7, ease }}
-        className="absolute right-4 bottom-12 left-4 rounded-sm border border-white/60 bg-white/80 p-3 backdrop-blur-sm sm:right-auto sm:bottom-14 sm:left-7 sm:w-[264px]"
+        className="absolute right-4 bottom-12 left-4 rounded-sm border border-line bg-surface/85 p-3 backdrop-blur-sm sm:right-auto sm:bottom-14 sm:left-7 sm:w-[264px]"
       >
         <p className="mb-2 text-[9.5px] font-semibold tracking-[0.16em] text-muted uppercase">Your size, by brand</p>
         <ul className="divide-y divide-line">

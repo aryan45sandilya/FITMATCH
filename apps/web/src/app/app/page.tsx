@@ -209,7 +209,7 @@ export default function OverviewPage() {
       </div>
 
       {p && (
-        <Link href="/app/discover" className="group flex items-center justify-between rounded-md bg-night px-6 py-6 text-canvas">
+        <Link href="/app/discover" className="group flex items-center justify-between rounded-md bg-night px-6 py-6 text-paper">
           <span>
             <span className="block text-[11px] font-semibold tracking-[0.16em] text-[#8a877f] uppercase">Product discovery</span>
             <span className="mt-1 block font-serif text-[22px] sm:text-[26px]">Browse pieces that fit you best.</span>

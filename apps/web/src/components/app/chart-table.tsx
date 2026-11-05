@@ -25,7 +25,7 @@ export function SizeTable({
         <table className="w-full min-w-max border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line bg-canvas/70 text-left">
-              <th scope="col" className="sticky left-0 bg-[#f9f8f5] px-4 py-2.5 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">Size</th>
+              <th scope="col" className="sticky left-0 bg-table-head px-4 py-2.5 text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">Size</th>
               {keys.map((k) => (
                 <th key={k} scope="col" className="px-4 py-2.5 text-[11px] font-semibold tracking-[0.08em] whitespace-nowrap text-muted uppercase">
                   {MEASUREMENT_LABEL[k]}
@@ -38,7 +38,7 @@ export function SizeTable({
               const on = highlight === s.label;
               return (
                 <tr key={s.label} className={cn("border-b border-line last:border-0", on && "bg-accent-soft/60")}>
-                  <th scope="row" className={cn("sticky left-0 px-4 py-2.5 text-left font-semibold", on ? "bg-[#f6efe6]" : "bg-surface")}>
+                  <th scope="row" className={cn("sticky left-0 px-4 py-2.5 text-left font-semibold", on ? "bg-highlight" : "bg-surface")}>
                     <span className="num">{s.label}</span>
                     {on && <span className="ml-2 text-[10.5px] font-semibold tracking-[0.06em] text-accent uppercase">Yours</span>}
                   </th>

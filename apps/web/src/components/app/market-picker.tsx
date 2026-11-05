@@ -30,7 +30,7 @@ export function MarketPicker({ variant = "segmented", className, value, onChange
         <Globe2 className="size-3.5 shrink-0 text-muted" aria-hidden />
         <span className="sr-only">Size chart market</span>
         <select value={current} onChange={(e) => change(e.target.value as Market)} className="w-full bg-transparent font-semibold text-ink outline-none" aria-label="Size chart market">
-          {MARKET_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label} sizing</option>)}
+          {MARKET_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </label>
     );

@@ -160,7 +160,7 @@ export default function ProductPage() {
             <div className="flex h-3 overflow-hidden rounded-full bg-line">
               {FEEDBACK_FIT.map((f, i) => {
                 const n = data.feedbackSummary[f.value] ?? 0;
-                return n ? <div key={f.value} style={{ width: `${(n / feedbackTotal) * 100}%` }} className={["bg-danger", "bg-warning", "bg-success", "bg-[#8aa5b8]", "bg-[#4f6f86]"][i]} title={`${f.label}: ${n}`} /> : null;
+                return n ? <div key={f.value} style={{ width: `${(n / feedbackTotal) * 100}%` }} className={["bg-danger", "bg-warning", "bg-success", "bg-line-strong", "bg-muted"][i]} title={`${f.label}: ${n}`} /> : null;
               })}
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px] text-muted">

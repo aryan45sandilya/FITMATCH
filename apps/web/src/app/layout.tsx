@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Playfair_Display } from "next/font/google";
 import { SessionProvider } from "@/lib/session";
 import { ToastProvider } from "@/components/ui/toast";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F7F6F2",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F7F6F2" },
+    { media: "(prefers-color-scheme: dark)", color: "#121211" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -24,7 +28,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${playfair.variable} ${inter.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${playfair.variable} ${inter.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">
         <SessionProvider>
           <ToastProvider>{children}</ToastProvider>

@@ -121,7 +121,7 @@ function CategoryStep({ categories, loading, onPick }: { categories?: Category[]
       {categories?.map((c) => (
         <li key={c.slug}>
           <button type="button" onClick={() => onPick(c.slug)} className="group flex w-full flex-col rounded-md border border-line bg-surface p-3 text-left transition-all hover:border-ink">
-            <span className="grid aspect-square place-items-center rounded-sm bg-canvas p-5 transition-colors group-hover:bg-[#efece6]">
+            <span className="grid aspect-square place-items-center rounded-sm bg-canvas p-5 transition-colors group-hover:bg-tile-hover">
               <GarmentIllustration category={c.slug} colorway={CATEGORY_COLORS[c.slug]} />
             </span>
             <span className="mt-3 flex items-center justify-between px-1 pb-1">
@@ -311,7 +311,7 @@ function ResultStep({ category, brand, product, unit, market, categoryName }: { 
             {data.chart.sourceUrl && <a href={data.chart.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-ink hover:underline">View brand's chart <ExternalLink className="size-3" /></a>}
           </section>
         )}
-        <Link href={`/app/compare?category=${category}`} className="flex items-center justify-between rounded-md bg-night px-5 py-4 text-[14px] font-semibold text-canvas">
+        <Link href={`/app/compare?category=${category}`} className="flex items-center justify-between rounded-md bg-night px-5 py-4 text-[14px] font-semibold text-paper">
           Compare across brands <ArrowRight className="size-4 text-accent" />
         </Link>
         <Link href={`/app/find?category=${category}`} className="flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink">

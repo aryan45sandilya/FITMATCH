@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, transition: { duration: 0.15 } }}
               transition={{ type: "spring", stiffness: 400, damping: 32 }}
-              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-sm bg-night px-4 py-3 text-[13.5px] text-canvas shadow-[0_12px_32px_-12px_rgba(0,0,0,0.45)]"
+              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-sm bg-night px-4 py-3 text-[13.5px] text-paper ring-1 ring-white/10 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.45)]"
               role="status"
             >
               <span className={t.tone === "error" ? "text-[#e39a88]" : t.tone === "success" ? "text-[#9fc2a8]" : "text-accent"}>

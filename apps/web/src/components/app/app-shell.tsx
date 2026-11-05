@@ -12,6 +12,7 @@ import { firstName } from "@/lib/labels";
 import { useSession } from "@/lib/session";
 import { Logo } from "../brand";
 import { MarketPicker } from "./market-picker";
+import { ThemeToggle } from "../ui/theme-toggle";
 import { cn } from "../ui/primitives";
 import { useToast } from "../ui/toast";
 
@@ -85,9 +86,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </nav>
         <div className="border-t border-line p-3">
-          <MarketPicker variant="select" className="mb-2" />
+          <div className="mb-2 flex items-center gap-2">
+            <MarketPicker variant="select" className="min-w-0 flex-1" />
+            <ThemeToggle />
+          </div>
           <div className="flex items-center gap-3 rounded-sm px-2 py-2">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-night text-[12px] font-semibold text-canvas">{initials}</span>
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-[12px] font-semibold text-canvas">{initials}</span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-semibold">{user?.fullName ?? " "}</span>
               <span className="block truncate text-[12px] text-muted">{user?.email}</span>
@@ -103,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile header */}
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
           <Logo href="/app" />
-          <Link href="/app/settings" className="grid size-9 place-items-center rounded-full bg-night text-[11.5px] font-semibold text-canvas" aria-label="Account settings">
+          <Link href="/app/settings" className="grid size-9 place-items-center rounded-full bg-ink text-[11.5px] font-semibold text-canvas" aria-label="Account settings">
             {initials}
           </Link>
         </header>
@@ -124,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <li key={n.href}>
                 <Link href={n.href} aria-current={on ? "page" : undefined} className="flex h-full flex-col items-center justify-center gap-1">
                   {n.primary ? (
-                    <span className={cn("grid size-10 place-items-center rounded-full transition-colors", on ? "bg-accent text-white" : "bg-ink text-canvas")}>
+                    <span className={cn("grid size-10 place-items-center rounded-full transition-colors", on ? "bg-accent text-on-accent" : "bg-ink text-canvas")}>
                       <n.icon className="size-[18px]" strokeWidth={2} />
                     </span>
                   ) : (
@@ -166,7 +170,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <X className="size-5" />
                 </button>
               </div>
-              <MarketPicker variant="compact" className="mb-3 w-full [&>button]:flex-1" />
+              <MarketPicker variant="compact" className="mb-2 w-full [&>button]:flex-1" />
+              <ThemeToggle labels className="mb-3 w-full [&>button]:flex-1" />
               <ul className="grid grid-cols-3 gap-2">
                 {[...NAV.filter((n) => !MOBILE.some((m) => m.href === n.href)), ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", icon: Gauge }] : [])].map((n) => (
                   <li key={n.href}>
@@ -214,7 +219,7 @@ function VerifyBanner() {
   return (
     <div className="border-b border-warning/20 bg-warning-soft/70">
       <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-[13px] sm:px-6 lg:px-10">
-        <span className="text-[#7b5420]">Please verify your email address.</span>
+        <span className="text-warning-text">Please verify your email address.</span>
         <button type="button" onClick={resend} disabled={busy} className="font-semibold text-ink underline-offset-2 hover:underline disabled:opacity-50">
           Resend link
         </button>

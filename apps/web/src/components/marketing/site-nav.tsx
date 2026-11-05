@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { Logo } from "../brand";
 import { LinkButton, cn } from "../ui/primitives";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 const links = [
   { href: "/#how-it-works", label: "How It Works" },
@@ -46,6 +47,7 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="hidden items-center gap-2 lg:flex">
+          <ThemeToggle className="mr-1" />
           {user ? (
             <LinkButton href="/app" size="sm">Open FitMatch</LinkButton>
           ) : (
@@ -84,6 +86,10 @@ export function SiteNav() {
                 </motion.div>
               ))}
               <div className="mt-auto flex flex-col gap-2.5 pb-safe">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-[14px] font-medium text-muted">Theme</span>
+                  <ThemeToggle labels />
+                </div>
                 {user ? (
                   <LinkButton href="/app" size="lg" full>Open FitMatch</LinkButton>
                 ) : (

@@ -73,11 +73,11 @@ export function GarmentIllustration({ category, colorway, className, label }: { 
   const fill = colorway ?? "#D8D2C6";
   const dark = luminance(fill) < 0.18;
   const stroke = dark ? "rgba(255,255,255,0.28)" : "rgba(23,23,23,0.32)";
-  const outline = dark ? "rgba(0,0,0,0.5)" : "rgba(23,23,23,0.55)";
+  const outline = dark ? "var(--fm-garment-edge-dark)" : "rgba(23,23,23,0.55)";
   return (
     <svg viewBox="-10 -10 220 220" className={cn("h-full w-full", className)} role="img" aria-label={label ?? "Garment illustration"}>
       <ellipse cx="100" cy="200" rx="70" ry="5" fill="#000" opacity="0.05" />
-      <path d={shape.body} fill={fill} stroke={outline} strokeWidth="1.1" strokeLinejoin="round" />
+      <path d={shape.body} fill={fill} style={{ stroke: outline }} strokeWidth="1.1" strokeLinejoin="round" />
       <g fill="none" stroke={stroke} strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
         {shape.details.map((d, i) => (
           <path key={i} d={d} strokeDasharray={i === shape.details.length - 1 && CATEGORY_SHAPE[category] !== "polo" ? "2.5 2" : undefined} />

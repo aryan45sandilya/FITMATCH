@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { MarketPicker } from "@/components/app/market-picker";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { User } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -92,6 +93,9 @@ export default function SettingsPage() {
             </Field>
             <Field label="Size chart market" hint="Recommendations use each brand's chart for this market." className="sm:col-span-2">
               <MarketPicker />
+            </Field>
+            <Field label="Colour theme" hint="System follows your device's light or dark setting.">
+              <ThemeToggle labels />
             </Field>
             <Field label="Measurement units">
               <Segmented label="Measurement units" value={unit} onChange={setUnit} options={[{ value: "cm", label: "Centimetres" }, { value: "in", label: "Inches" }]} />

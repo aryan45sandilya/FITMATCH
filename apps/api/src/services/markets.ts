@@ -26,5 +26,7 @@ export function marketFor(req: Request, explicit?: unknown): Market {
 /** Explains why a chart from another market (or demo data) is being used. */
 export function chartMarketNote(brandName: string, chartMarket: ChartMarket, wanted: Market, notPublished?: string | null): string | null {
   if (chartMarket === wanted || chartMarket === "GLOBAL") return null;
-  return `Using ${brandName}'s ${MARKET_LABEL[chartMarket]} chart — ${notPublished ? `no ${MARKET_LABEL[wanted]} chart (${notPublished.replace(/\.$/, "")})` : `no ${MARKET_LABEL[wanted]} chart is on file`}.`;
+  // "Levi's" → "Levi's", "Nike" → "Nike's"
+  const possessive = /'s$|s$/i.test(brandName) ? `${brandName.replace(/'s$/i, "'s")}` : `${brandName}'s`;
+  return `Using ${possessive} ${MARKET_LABEL[chartMarket]} chart — ${notPublished ? `no ${MARKET_LABEL[wanted]} chart (${notPublished.replace(/\.$/, "")})` : `no ${MARKET_LABEL[wanted]} chart is on file`}.`;
 }

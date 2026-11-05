@@ -60,7 +60,7 @@ export function BrandDirectory({ basePath }: { basePath: string }) {
         <ul className="grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {list.map((b) => (
             <li key={b.id} className="bg-surface">
-              <Link href={`${basePath}/${b.slug}`} className="group flex h-full flex-col p-6 transition-colors hover:bg-[#fcfbf9]">
+              <Link href={`${basePath}/${b.slug}`} className="group flex h-full flex-col p-6 transition-colors hover:bg-hover">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="text-[20px] font-bold tracking-[-0.02em]">{b.name}</h3>
