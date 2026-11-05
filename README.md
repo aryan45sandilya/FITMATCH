@@ -1,93 +1,143 @@
+<div align="center">
+
 # FitMatch
 
-**One profile. Every brand. The right fit.**
+### One profile. Every brand. The right fit.
 
-FitMatch turns one body-measurement profile into explainable size recommendations across brands, categories and individual products. It is the layer between a person's measurements and the brands they shop from, not a store.
+A size-intelligence platform that turns one set of body measurements into explainable
+size recommendations across fashion brands, markets and individual products.
 
-```
-apps/
-  api/   Express 5 + TypeScript REST API, PostgreSQL (pg), recommendation engine, tests
-  web/   Next.js 15 (App Router) + TypeScript + Tailwind v4 + Framer Motion + Lucide
-```
+![Next.js](https://img.shields.io/badge/Next.js_15-171717?style=flat-square&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Express](https://img.shields.io/badge/Express_5-000000?style=flat-square&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-42_passing-527A60?style=flat-square)
+
+<img src="docs/screenshots/landing.jpg" alt="FitMatch landing page" width="860" />
+
+</div>
+
+---
+
+## Why FitMatch
+
+A medium is a label, not a measurement. Two brands can grade the same size several centimetres apart, and the same brand can publish different charts in India, the US and the UK. FitMatch stores your measurements once and does the translation, size by size, brand by brand, market by market, and it always shows its working.
+
+## Highlights
+
+| | |
+|---|---|
+| **Measurement profile** | A five-step guided wizard with a live body diagram, how-to-measure help, range validation and a cm/inch switch. Supports multiple profiles. |
+| **Explainable recommendations** | A weighted, multi-measurement engine. Chest alone never decides a size. Each result comes with an alternative size, per-measurement comparison and a plain-language confidence rating (never a made-up percentage). |
+| **Cross-brand comparison** | Your size in every brand for a category on one screen, or start from *"I wear M in H&M"*. |
+| **Real brand charts** | 88 men's size charts transcribed from official brand websites, each with its source link, date and review status. |
+| **Three markets** | India, United States, UK & Europe, each with its own size charts, local-currency prices (₹ · $ · £) and the brand's regional store. |
+| **Honest data** | Demonstration data is labelled everywhere. Missing data says *"Insufficient product sizing information"* rather than guessing. |
+| **Fit feedback loop** | Your feedback personalises your own results. Product-wide changes need five or more shoppers to agree, and are capped. |
+| **Admin panel** | Brands, products, garment measurements, size charts (with provenance and verification), category weights, prices per market and feedback moderation. |
+| **Themes** | Warm editorial Light and a two-tone Contrast theme, contrast-checked to WCAG AA. |
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/dashboard-contrast.jpg" alt="Dashboard in the Contrast theme" /></td>
+    <td><img src="docs/screenshots/size-result-contrast.jpg" alt="Size recommendation with measurement comparison" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Dashboard · Contrast theme</sub></td>
+    <td align="center"><sub>Size result with measurement comparison</sub></td>
+  </tr>
+</table>
 
 ## Quick start
 
-Requires Node 20+.
+> Requires **Node.js 20+**. No database install is needed for local development.
 
 ```bash
+git clone https://github.com/aryan45sandilya/FITMATCH.git
+cd FITMATCH
 npm install
-cp apps/api/.env.example apps/api/.env      # set ADMIN_PASSWORD, or one is generated and printed once
-cp apps/web/.env.example apps/web/.env.local
-npm run dev:api                              # http://localhost:4000
-npm run dev:web                              # http://localhost:3000
+
+cp src/api/.env.example src/api/.env        # set ADMIN_PASSWORD, or one is generated and printed once
+cp src/web/.env.example src/web/.env.local
+
+npm run dev:api                              # API  → http://localhost:4000
+npm run dev:web                              # Web  → http://localhost:3000
 ```
 
-With no `DATABASE_URL`, the API runs an **embedded PostgreSQL (PGlite)** in `apps/api/.pglite`. It migrates and seeds automatically on first boot, so the app works immediately. Point `DATABASE_URL` at Neon (or any Postgres) for real deployments:
+Without a `DATABASE_URL`, the API runs an **embedded PostgreSQL (PGlite)** in `src/api/.pglite`. It migrates and seeds itself on first boot.
+
+<details>
+<summary><b>Use a real PostgreSQL / Neon database</b></summary>
 
 ```bash
-DATABASE_URL=postgres://… npm run db:migrate
-DATABASE_URL=postgres://… npm run db:seed     # demo catalogue + admin user from ADMIN_EMAIL/ADMIN_PASSWORD
-npm run make-admin -w apps/api -- someone@example.com
+# in src/api/.env
+DATABASE_URL=postgres://user:password@host/fitmatch?sslmode=require
 ```
-
-Tests (engine unit tests and API integration tests against a real in-memory Postgres):
 
 ```bash
-npm test
-npm run typecheck
+npm run db:migrate
+npm run db:seed                                   # demo catalogue, sourced charts, admin user
+npm run make-admin -w src/api -- you@example.com  # promote an existing account
 ```
+</details>
 
-## What's in it
+### Scripts
 
-| Area | Where |
+| Command | What it does |
 |---|---|
-| Landing, brands, size guide, about, legal, help | `apps/web/src/app/page.tsx`, `apps/web/src/app/(site)` |
-| Sign up / login / forgot + reset password / email verification / optional Google | `apps/web/src/app/(auth)`, `apps/api/src/routes/auth.ts` |
-| 5-step measurement wizard (live body diagram, per-field guidance, range validation, consistency checks, cm/in) | `apps/web/src/components/app/measurement-wizard.tsx` |
-| Dashboard, measurements (multiple profiles, inline edit), size finder, cross-brand comparison, discovery, product detail, fit history + feedback, saved, settings | `apps/web/src/app/app` |
-| Admin: brands, products, image upload, garment measurements, size charts with provenance and verification, category weights, feedback moderation, performance metrics | `apps/web/src/app/admin`, `apps/api/src/routes/admin.ts` |
-| Schema | `apps/api/db/migrations/001_initial_schema.sql` |
+| `npm run dev:api` / `npm run dev:web` | Start the API / website in watch mode |
+| `npm test` | Engine unit tests and API integration tests (real in-memory Postgres) |
+| `npm run typecheck` | Type-check both apps |
+| `npm run build` | Production build of both apps |
+| `npm run db:migrate` / `npm run db:seed` | Apply migrations / load seed data |
 
-## Recommendation engine
+## Project structure
 
-`apps/api/src/engine/` is pure and stateless. The input and output are plain JSON (`EngineInput` → `EngineResult`).
+```
+FITMATCH/
+├── src/
+│   ├── api/                       Express 5 REST API (TypeScript)
+│   │   ├── db/migrations/         SQL migrations (001 schema → 004 store links)
+│   │   └── src/
+│   │       ├── engine/            Recommendation engine (pure, unit-tested)
+│   │       ├── routes/            auth · profiles · catalog · recommend · me · admin
+│   │       ├── services/          Data loading, market selection, catalogue queries
+│   │       ├── db/                Connection, migrator, seed + sourced brand charts
+│   │       └── middleware/        Sessions, auth guards, origin checks
+│   └── web/                       Next.js 15 App Router website
+│       └── src/
+│           ├── app/               Pages: landing, auth, onboarding, app, admin
+│           ├── components/        UI kit, app views, illustrations, admin tools
+│           └── lib/               API client, session, units, labels, theme
+└── docs/screenshots/              README images
+```
 
-1. **Gate on required measurements** per category (from `clothing_categories.required_measurements`). Missing ones return `missing_measurements` rather than a guess.
-2. **Choose the data.** Use product garment measurements when they cover enough of the category's weighted points; otherwise fall back to the brand's category size chart. If neither does, or the data was rejected in review, it returns *"Insufficient product sizing information for a reliable recommendation."*
-3. **Weighted, normalised distance per size.**
-   - *Garment data:* target = body + wearing ease for the product's fit type (slim/regular/relaxed/oversized), shifted toward the user's preference. Waistbands get almost no ease. `|garment − target| / tolerance`, with tightness penalised more than looseness and forgiven by fabric stretch.
-   - *Body charts:* in range scores ≈ 0 (with a small centrality term); out of range scores by distance over tolerance.
-   - Points are combined with category weights (e.g. tees: chest .5, shoulder .3, waist .2). Chest never decides alone.
-4. **Output:** best size, an alternative when it's close (with the trade-off explained), per-measurement comparison, length and inseam warnings, and a **qualitative** match quality and confidence. Confidence is built from explicit, listed reasons (data basis, verification, coverage, gap between sizes, measurement method). No percentages are fabricated.
-5. **Feedback, applied carefully.** A user's own latest feedback for a brand and category nudges *their* target (capped at ±1.5 cm). Product-wide adjustments need **≥ 5 distinct users** with active (non-excluded) feedback and are capped at ±2 cm. One review can't redefine sizing.
+## How a size is chosen
 
-`ENGINE_MODE=remote` + `RECOMMENDER_URL` sends the same JSON to an external service (e.g. a future FastAPI model) via `POST /recommend`, falling back to the deterministic engine on any failure.
+1. **Check the essentials.** Each category lists required measurements. If one is missing, you're asked for it instead of getting a guess.
+2. **Pick the best data.** The product's garment measurements first, then the brand's chart for your market, then another market's chart (with a note), then labelled demo data.
+3. **Score every size.** The engine compares each measurement with the size's range, or with the garment plus the ease for its cut. It allows for fit preference and fabric stretch, treats tight as worse than loose, and weights the measurements by category.
+4. **Explain it.** You get the recommended size, a close alternative and its trade-off, a per-measurement comparison, and a confidence rating with its reasons.
 
-## Data honesty
+## Data and honesty
 
-- **All seeded size charts and garment measurements are demonstration data**, approximated and not taken from the brands' published charts. They're stored with `is_demo = true` and `verification_status = 'unverified'`, and labelled "Demo data" everywhere in the UI. The API refuses to mark demo data as verified.
-- Every chart and garment value carries **source, collection date and verification status**. Only verified data (which needs a source URL) is labelled "Officially verified", and editing a chart's values resets it to unverified.
-- Products have no live stock or prices. "Shop" links open the brand's website, and demo products say so.
-- Products without photography render as technical flat sketches. Admins can add https image URLs or upload to Cloudinary.
-
-## Security notes
-
-- Session auth: random 256-bit token in an `HttpOnly`, `SameSite=Lax` cookie (`Secure` in production). Only its SHA-256 is stored. Sliding 30-day expiry.
-- Passwords hashed with scrypt. Reset and verify tokens are single-use, hashed and short-lived. Password reset revokes other sessions.
-- Origin check on state-changing requests, rate limiting on auth endpoints, Helmet headers, `Cache-Control: private, no-store` on all API responses, zod validation on every input, and constraint errors mapped to safe messages.
-- The web app proxies `/api/*` to the API (`next.config.ts` rewrites), so cookies stay first-party on the web origin.
-- Account deletion cascades to every profile, measurement, recommendation and piece of feedback.
+- **Brand charts** come from official brand size guides, with their source URL and date, and are marked *pending review* until verified. Zara and Uniqlo stay on labelled demo data.
+- **Catalogue products, garment measurements and prices** are **demonstration data**, labelled throughout the app.
+- **Brand names** are for identification only. FitMatch is independent of all brands.
 
 ## Deployment
 
-- **Database (Neon):** create a database and set `DATABASE_URL` (with `sslmode=require`). Run `npm run db:migrate`, then `npm run db:seed` if you want the demo catalogue.
-- **API (Railway):** root `apps/api`, build `npm run build`, start `npm start`. Set `NODE_ENV=production`, `DATABASE_URL`, `APP_ORIGIN` (the web URL), and `ALLOWED_ORIGINS`. Optionally set `GOOGLE_CLIENT_ID/SECRET` (redirect URI `${APP_ORIGIN}/api/auth/google/callback`) and `CLOUDINARY_*`.
-- **Web (Vercel):** root `apps/web`, env `API_URL` = the Railway URL.
+| Part | Platform | Notes |
+|---|---|---|
+| Database | Neon | Set `DATABASE_URL`, then run `npm run db:migrate` |
+| API | Railway | Root `src/api` · `npm run build` / `npm start` · set `DATABASE_URL`, `APP_ORIGIN`, `ALLOWED_ORIGINS` |
+| Web | Vercel | Root `src/web` · set `API_URL` to the Railway URL |
 
-## Known gaps
+## Roadmap
 
-- **Email delivery** uses a console transport. Outside production, the verification and reset links are also returned to the UI so the flows work locally. Plug a provider into `apps/api/src/lib/mailer.ts` before launch.
-- **Google sign-in** is implemented (authorization-code flow with state check) but is hidden until credentials are configured, and it hasn't been exercised against Google here.
-- **Cloudinary uploads** use signed direct uploads and are disabled until `CLOUDINARY_*` is set. Not exercised against Cloudinary here.
-- The demo catalogue is menswear-only, so womenswear users fall back to the same charts.
-- Frontend has no automated tests yet. Coverage is the engine and API suites, plus manual browser walkthroughs.
+- [ ] Transactional email provider
+- [ ] Verify the 88 sourced brand charts in the admin panel
+- [ ] Real product catalogue with garment measurements
+- [ ] Womenswear charts
+- [ ] Frontend test suite
