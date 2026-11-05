@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Contrast, Monitor, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { THEME_STORAGE_KEY as KEY } from "@/lib/theme";
@@ -36,7 +36,7 @@ export function useTheme() {
 
 const OPTIONS: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
+  { value: "dark", label: "Contrast", icon: Contrast },
   { value: "system", label: "System", icon: Monitor },
 ];
 

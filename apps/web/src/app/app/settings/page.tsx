@@ -94,7 +94,7 @@ export default function SettingsPage() {
             <Field label="Size chart market" hint="Recommendations use each brand's chart for this market." className="sm:col-span-2">
               <MarketPicker />
             </Field>
-            <Field label="Colour theme" hint="System follows your device's light or dark setting.">
+            <Field label="Colour theme" hint="Contrast pairs charcoal navigation with ivory pages. System uses Contrast when your device is in dark mode.">
               <ThemeToggle labels />
             </Field>
             <Field label="Measurement units">

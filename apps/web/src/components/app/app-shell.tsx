@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-canvas lg:grid lg:grid-cols-[260px_1fr]">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
+      <aside className="chrome sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
         <div className="flex h-16 items-center px-6">
           <Logo href="/app" />
         </div>
@@ -105,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="min-w-0">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
+        <header className="chrome sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
           <Logo href="/app" />
           <Link href="/app/settings" className="grid size-9 place-items-center rounded-full bg-ink text-[11.5px] font-semibold text-canvas" aria-label="Account settings">
             {initials}
@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-safe backdrop-blur lg:hidden">
+      <nav aria-label="Primary" className="chrome fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-safe backdrop-blur lg:hidden">
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           {MOBILE.map((n) => {
             const on = isActive(path, n.href, n.exact);
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               role="dialog"
               aria-modal="true"
               aria-label="More navigation"
-              className="fixed inset-x-0 bottom-0 z-50 rounded-t-lg bg-surface px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))] lg:hidden"
+              className="chrome fixed inset-x-0 bottom-0 z-50 rounded-t-lg bg-surface px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))] lg:hidden"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}

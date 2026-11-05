@@ -54,30 +54,66 @@
   --fm-skeleton-b: #f6f5f1;
 }
 
-/* Dark values — written twice (system preference and explicit choice); keep both in sync. */
+/* Contrast theme (stored as data-theme="dark") — written twice (system preference and explicit choice); keep both in sync.
+   Warm ivory content; anything marked `.chrome` (sidebar, top bars, mobile nav) turns charcoal. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --fm-canvas: #121211; --fm-surface: #1a1a18; --fm-ink: #f2f0eb; --fm-ink-hover: #d9d6cf; --fm-muted: #aaa79f; --fm-faint: #8c897f;
-    --fm-accent: #cfa574; --fm-accent-strong: #dcb486; --fm-accent-text: #dcb486; --fm-on-accent: #171717; --fm-accent-soft: #2b2219;
-    --fm-success: #86b294; --fm-success-soft: #17231b; --fm-warning: #dba865; --fm-warning-text: #e6bd82; --fm-warning-soft: #2a2014;
-    --fm-danger: #e08f7b; --fm-danger-soft: #2c1814; --fm-line: #2b2a27; --fm-line-strong: #3d3c37; --fm-line-hover: #5a5852;
-    --fm-night: #0a0a09; --fm-night-2: #151513; --fm-hover: #20201d; --fm-subtle: #242320; --fm-tile: #1f1e1b; --fm-tile-hover: #272622;
-    --fm-highlight: #2b2219; --fm-table-head: #1e1e1b; --fm-focus-row: #1f1e1b; --fm-cta-band: #171715; --fm-hero: #1c1b18;
-    --fm-hero-text: #a39f96; --fm-hero-numeral: #272622; --fm-brand-dim: #8c897f; --fm-figure: #2b2a27; --fm-figure-line: #5c5a53;
-    --fm-grid: #232320; --fm-garment-edge-dark: rgba(255, 255, 255, 0.38); --fm-skeleton-a: #1f1e1b; --fm-skeleton-b: #2a2925;
+    color-scheme: light;
+    --fm-canvas: #ebe5d9; --fm-surface: #fbf8f2; --fm-ink: #16161a; --fm-ink-hover: #2c2c31; --fm-muted: #5f5c55;
+    --fm-faint: #75716a; --fm-accent: #926838; --fm-accent-strong: #80592b; --fm-accent-text: #7a5629; --fm-on-accent: #ffffff;
+    --fm-accent-soft: #efe2cf; --fm-success: #46715a; --fm-success-soft: #dfe9e0; --fm-warning: #b9803a; --fm-warning-text: #7f551c;
+    --fm-warning-soft: #f2e4cd; --fm-danger: #9a4532; --fm-danger-soft: #f2ddd6; --fm-line: #ddd5c6; --fm-line-strong: #c9c0ae;
+    --fm-line-hover: #ada391; --fm-night: #16161a; --fm-night-2: #212126; --fm-hover: #f5f0e6; --fm-subtle: #e4ddcf;
+    --fm-tile: #e3dccd; --fm-tile-hover: #dad2c1; --fm-highlight: #efe2cf; --fm-table-head: #f2ede3; --fm-focus-row: #f7f3ea;
+    --fm-cta-band: #e2dbcc; --fm-hero: #e2dbcc; --fm-hero-text: #5f5c55; --fm-hero-numeral: #d4ccba; --fm-brand-dim: #7a766e;
+    --fm-figure: #e6dfd2; --fm-figure-line: #a39b8b; --fm-grid: #e2dbcd; --fm-garment-edge-dark: rgba(0, 0, 0, 0.5); --fm-skeleton-a: #e3dccd;
+    --fm-skeleton-b: #eee8dd; --fm-card-edge: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(22, 22, 26, 0.05), 0 4px 14px -8px rgba(22, 22, 26, 0.12); --fm-grain-opacity: 0.045;
   }
 }
 :root[data-theme="dark"] {
+  color-scheme: light;
+  --fm-canvas: #ebe5d9; --fm-surface: #fbf8f2; --fm-ink: #16161a; --fm-ink-hover: #2c2c31; --fm-muted: #5f5c55;
+  --fm-faint: #75716a; --fm-accent: #926838; --fm-accent-strong: #80592b; --fm-accent-text: #7a5629; --fm-on-accent: #ffffff;
+  --fm-accent-soft: #efe2cf; --fm-success: #46715a; --fm-success-soft: #dfe9e0; --fm-warning: #b9803a; --fm-warning-text: #7f551c;
+  --fm-warning-soft: #f2e4cd; --fm-danger: #9a4532; --fm-danger-soft: #f2ddd6; --fm-line: #ddd5c6; --fm-line-strong: #c9c0ae;
+  --fm-line-hover: #ada391; --fm-night: #16161a; --fm-night-2: #212126; --fm-hover: #f5f0e6; --fm-subtle: #e4ddcf;
+  --fm-tile: #e3dccd; --fm-tile-hover: #dad2c1; --fm-highlight: #efe2cf; --fm-table-head: #f2ede3; --fm-focus-row: #f7f3ea;
+  --fm-cta-band: #e2dbcc; --fm-hero: #e2dbcc; --fm-hero-text: #5f5c55; --fm-hero-numeral: #d4ccba; --fm-brand-dim: #7a766e;
+  --fm-figure: #e6dfd2; --fm-figure-line: #a39b8b; --fm-grid: #e2dbcd; --fm-garment-edge-dark: rgba(0, 0, 0, 0.5); --fm-skeleton-a: #e3dccd;
+  --fm-skeleton-b: #eee8dd; --fm-card-edge: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(22, 22, 26, 0.05), 0 4px 14px -8px rgba(22, 22, 26, 0.12); --fm-grain-opacity: 0.045;
+}
+
+/* Contrast theme: charcoal chrome. Remapping tokens inside .chrome keeps component classes unchanged. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chrome {
+    color-scheme: dark;
+    color: var(--fm-ink);
+    --fm-canvas: #1f1f24; --fm-surface: #16161a; --fm-ink: #f2eee6; --fm-ink-hover: #d9d4ca; --fm-muted: #aba79f;
+    --fm-faint: #8a867e; --fm-line: #2a2a30; --fm-line-strong: #3a3a41; --fm-line-hover: #55555d; --fm-hover: #202026;
+    --fm-subtle: #24242a; --fm-accent: #c9a06a; --fm-accent-strong: #d6b07e; --fm-accent-text: #d8b07c; --fm-on-accent: #16161a;
+    --fm-accent-soft: #2c261d; --fm-warning-text: #e3b56f; --fm-warning-soft: #2b2216; --fm-card-edge: none;
+  }
+}
+:root[data-theme="dark"] .chrome {
   color-scheme: dark;
-  --fm-canvas: #121211; --fm-surface: #1a1a18; --fm-ink: #f2f0eb; --fm-ink-hover: #d9d6cf; --fm-muted: #aaa79f; --fm-faint: #8c897f;
-  --fm-accent: #cfa574; --fm-accent-strong: #dcb486; --fm-accent-text: #dcb486; --fm-on-accent: #171717; --fm-accent-soft: #2b2219;
-  --fm-success: #86b294; --fm-success-soft: #17231b; --fm-warning: #dba865; --fm-warning-text: #e6bd82; --fm-warning-soft: #2a2014;
-  --fm-danger: #e08f7b; --fm-danger-soft: #2c1814; --fm-line: #2b2a27; --fm-line-strong: #3d3c37; --fm-line-hover: #5a5852;
-  --fm-night: #0a0a09; --fm-night-2: #151513; --fm-hover: #20201d; --fm-subtle: #242320; --fm-tile: #1f1e1b; --fm-tile-hover: #272622;
-  --fm-highlight: #2b2219; --fm-table-head: #1e1e1b; --fm-focus-row: #1f1e1b; --fm-cta-band: #171715; --fm-hero: #1c1b18;
-  --fm-hero-text: #a39f96; --fm-hero-numeral: #272622; --fm-brand-dim: #8c897f; --fm-figure: #2b2a27; --fm-figure-line: #5c5a53;
-  --fm-grid: #232320; --fm-garment-edge-dark: rgba(255, 255, 255, 0.38); --fm-skeleton-a: #1f1e1b; --fm-skeleton-b: #2a2925;
+  color: var(--fm-ink);
+  --fm-canvas: #1f1f24; --fm-surface: #16161a; --fm-ink: #f2eee6; --fm-ink-hover: #d9d4ca; --fm-muted: #aba79f;
+  --fm-faint: #8a867e; --fm-line: #2a2a30; --fm-line-strong: #3a3a41; --fm-line-hover: #55555d; --fm-hover: #202026;
+  --fm-subtle: #24242a; --fm-accent: #c9a06a; --fm-accent-strong: #d6b07e; --fm-accent-text: #d8b07c; --fm-on-accent: #16161a;
+  --fm-accent-soft: #2c261d; --fm-warning-text: #e3b56f; --fm-warning-soft: #2b2216; --fm-card-edge: none;
+}
+
+/* Depth: cards lift slightly off the ivory, and the page carries a faint woven grain. */
+:root { --fm-card-edge: none; --fm-grain-opacity: 0; }
+.rounded-md.bg-surface { box-shadow: var(--fm-card-edge); }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--fm-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.09 0 0 0 0 0.09 0 0 0 0 0.1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Illustrations placed on the always-dark "night" panels use light line work in both themes. */

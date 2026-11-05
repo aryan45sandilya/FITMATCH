@@ -36,7 +36,7 @@ export function SiteNav() {
   }, [open]);
 
   return (
-    <header className={cn("sticky top-0 z-40 transition-[background-color,border-color] duration-300", scrolled || open ? "border-b border-line bg-canvas/92 backdrop-blur-md" : "border-b border-transparent")}>
+    <header className={cn("chrome sticky top-0 z-40 bg-canvas/95 backdrop-blur-md transition-[border-color] duration-300", scrolled || open ? "border-b border-line" : "border-b border-transparent")}>
       <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-4 sm:px-6 lg:px-10">
         <Logo />
         <nav aria-label="Main" className="hidden items-center gap-8 lg:flex">
