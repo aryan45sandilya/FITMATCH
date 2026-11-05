@@ -226,6 +226,16 @@ describe("markets", () => {
     expect(zara.chart.isDemo).toBe(true);
   });
 
+  it("lists brands for a category with the chart each market would use (size finder brand step)", async () => {
+    const res = await request(app).get("/api/categories/t-shirts/brands?market=IN");
+    expect(res.status).toBe(200);
+    const by = Object.fromEntries(res.body.brands.map((b: { slug: string; chartMarket: string; chartIsSourced: boolean }) => [b.slug, b]));
+    expect(by.hm.chartMarket).toBe("IN");
+    expect(by.hm.chartIsSourced).toBe(true);
+    expect(by.levis.chartMarket).toBe("UK_EU");
+    expect(by.zara.chartIsSourced).toBe(false);
+  });
+
   it("stores the market chosen at sign-up", async () => {
     const res = await request(app).post("/api/auth/signup").send({ fullName: "Sam", email: `m${Date.now()}@test.local`, password: "correct-horse-9", market: "UK_EU" });
     expect(res.body.user.market).toBe("UK_EU");

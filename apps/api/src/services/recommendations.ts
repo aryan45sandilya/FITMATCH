@@ -166,12 +166,13 @@ export async function loadPersonalFeedback(q: Queryable, userId: string) {
  *  2. otherwise any real chart (UK/EU first, as the most widely published international chart),
  *  3. otherwise demonstration data.
  * Within each tier: verified first, then matching audience, then most recent.
+ * The table alias is deliberately unusual so caller expressions like "c.id" never resolve to it.
  */
 export const BEST_CHART_SQL = (brandExpr: string, categoryExpr: string, audienceExpr: string, marketExpr: string) => `(
-  SELECT c.id FROM brand_size_charts c
-  WHERE c.brand_id = ${brandExpr} AND c.category_id = ${categoryExpr} AND c.verification_status <> 'rejected'
-  ORDER BY (c.market = ${marketExpr} AND NOT c.is_demo) DESC, (NOT c.is_demo) DESC, (c.market = 'UK_EU') DESC,
-    (c.verification_status = 'verified') DESC, (c.audience = ${audienceExpr}) DESC, c.collected_at DESC
+  SELECT best_chart.id FROM brand_size_charts best_chart
+  WHERE best_chart.brand_id = ${brandExpr} AND best_chart.category_id = ${categoryExpr} AND best_chart.verification_status <> 'rejected'
+  ORDER BY (best_chart.market = ${marketExpr} AND NOT best_chart.is_demo) DESC, (NOT best_chart.is_demo) DESC, (best_chart.market = 'UK_EU') DESC,
+    (best_chart.verification_status = 'verified') DESC, (best_chart.audience = ${audienceExpr}) DESC, best_chart.collected_at DESC
   LIMIT 1)`;
 
 /** "Brand doesn't publish a chart for this market" notes, keyed by brand id. */
