@@ -312,7 +312,7 @@ adminRouter.get("/charts", async (req, res) => {
   const q = parse(z.object({ brandId: z.string().uuid().optional(), status: verification.optional() }), req.query);
   const db = await getDb();
   const { rows } = await db.query(
-    `SELECT s.id, s.name, s.audience, s.measurement_basis AS basis, s.source, s.source_url AS "sourceUrl", s.collected_at AS "collectedAt",
+    `SELECT s.id, s.name, s.audience, s.market, s.measurement_basis AS basis, s.source, s.source_url AS "sourceUrl", s.collected_at AS "collectedAt",
        s.verification_status AS verification, s.verified_at AS "verifiedAt", s.is_demo AS "isDemo", s.updated_at AS "updatedAt",
        b.id AS "brandId", b.name AS "brandName", c.id AS "categoryId", c.name AS "categoryName",
        (SELECT count(DISTINCT size_label)::int FROM size_chart_measurements m WHERE m.chart_id = s.id) AS "sizeCount"
@@ -329,7 +329,7 @@ adminRouter.get("/charts/:id", async (req, res) => {
   const db = await getDb();
   const chart = (await loadCharts(db, [id])).get(id);
   if (!chart) throw notFound("Size chart");
-  const { rows } = await db.query(`SELECT brand_id AS "brandId", category_id AS "categoryId", notes FROM brand_size_charts WHERE id = $1`, [id]);
+  const { rows } = await db.query(`SELECT brand_id AS "brandId", category_id AS "categoryId", notes, market FROM brand_size_charts WHERE id = $1`, [id]);
   res.json({ chart: { ...chart, ...rows[0] } });
 });
 
@@ -337,6 +337,7 @@ const chartSchema = z.object({
   brandId: z.string().uuid(),
   categoryId: z.number().int().positive(),
   audience: z.enum(["menswear", "womenswear", "unisex"]).default("unisex"),
+  market: z.enum(["IN", "US", "UK_EU", "GLOBAL"]).default("UK_EU"),
   name: z.string().trim().min(2).max(120),
   basis: z.enum(["body", "garment"]).default("body"),
   source: z.string().trim().min(3).max(300),
@@ -371,9 +372,9 @@ adminRouter.post("/charts", async (req, res) => {
   const db = await getDb();
   const id = await db.tx(async (q) => {
     const { rows } = await q.query<{ id: string }>(
-      `INSERT INTO brand_size_charts (brand_id, category_id, audience, name, measurement_basis, source, source_url, collected_at, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-      [c.brandId, c.categoryId, c.audience, c.name, c.basis, c.source, c.sourceUrl ?? null, c.collectedAt, c.notes ?? null],
+      `INSERT INTO brand_size_charts (brand_id, category_id, audience, name, measurement_basis, source, source_url, collected_at, notes, market)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [c.brandId, c.categoryId, c.audience, c.name, c.basis, c.source, c.sourceUrl ?? null, c.collectedAt, c.notes ?? null, c.market],
     );
     await writeChartSizes(q, rows[0]!.id, c.sizes);
     return rows[0]!.id;
@@ -389,9 +390,9 @@ adminRouter.put("/charts/:id", async (req, res) => {
     // Editing data resets verification: changed numbers must be re-verified.
     const { rows } = await q.query(
       `UPDATE brand_size_charts SET brand_id=$2, category_id=$3, audience=$4, name=$5, measurement_basis=$6, source=$7, source_url=$8,
-         collected_at=$9, notes=$10, verification_status = 'unverified', verified_by = NULL, verified_at = NULL, is_demo = false, updated_at = now()
+         collected_at=$9, notes=$10, market=$11, verification_status = 'unverified', verified_by = NULL, verified_at = NULL, is_demo = false, updated_at = now()
        WHERE id = $1 RETURNING id`,
-      [id, c.brandId, c.categoryId, c.audience, c.name, c.basis, c.source, c.sourceUrl ?? null, c.collectedAt, c.notes ?? null],
+      [id, c.brandId, c.categoryId, c.audience, c.name, c.basis, c.source, c.sourceUrl ?? null, c.collectedAt, c.notes ?? null, c.market],
     );
     if (!rows[0]) throw notFound("Size chart");
     await writeChartSizes(q, id, c.sizes);

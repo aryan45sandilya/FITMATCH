@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { User } from "@/lib/types";
+import { MARKET_OPTIONS } from "@/lib/labels";
 import { useApi } from "@/lib/use-api";
 import { Button, Field, Input, LinkButton, Notice, Select, cn } from "../ui/primitives";
 
@@ -127,7 +128,8 @@ const rules = [
 export function SignupForm() {
   const router = useRouter();
   const { setUser } = useSession();
-  const [form, setForm] = useState({ fullName: "", email: "", password: "", genderFit: "" });
+  const { market: guessMarket } = useSession();
+  const [form, setForm] = useState({ fullName: "", email: "", password: "", genderFit: "", market: "" });
   const [busy, setBusy] = useState(false);
   const f = useFormError();
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm((s) => ({ ...s, [k]: e.target.value }));
@@ -137,7 +139,7 @@ export function SignupForm() {
     f.reset();
     setBusy(true);
     try {
-      const res = await api.post<{ user: User; devVerificationUrl?: string }>("/auth/signup", { ...form, genderFit: form.genderFit || undefined });
+      const res = await api.post<{ user: User; devVerificationUrl?: string }>("/auth/signup", { ...form, genderFit: form.genderFit || undefined, market: form.market || guessMarket });
       setUser(res.user);
       if (res.devVerificationUrl) sessionStorage.setItem("fm_dev_verify", res.devVerificationUrl);
       router.push("/onboarding");
@@ -171,6 +173,11 @@ export function SignupForm() {
               );
             })}
           </ul>
+        </Field>
+        <Field label="Where do you shop?" htmlFor="market" hint="Brands publish different size charts in each market. You can switch any time.">
+          <Select id="market" value={form.market || guessMarket} onChange={set("market")}>
+            {MARKET_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </Select>
         </Field>
         <Field label="I usually shop" htmlFor="gender" optional hint="Helps us pick the right size chart when a brand has several.">
           <Select id="gender" value={form.genderFit} onChange={set("genderFit")}>

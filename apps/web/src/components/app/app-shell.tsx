@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { firstName } from "@/lib/labels";
 import { useSession } from "@/lib/session";
 import { Logo } from "../brand";
+import { MarketPicker } from "./market-picker";
 import { cn } from "../ui/primitives";
 import { useToast } from "../ui/toast";
 
@@ -84,6 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </nav>
         <div className="border-t border-line p-3">
+          <MarketPicker variant="select" className="mb-2" />
           <div className="flex items-center gap-3 rounded-sm px-2 py-2">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-night text-[12px] font-semibold text-canvas">{initials}</span>
             <span className="min-w-0 flex-1">
@@ -164,6 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <X className="size-5" />
                 </button>
               </div>
+              <MarketPicker variant="compact" className="mb-3 w-full [&>button]:flex-1" />
               <ul className="grid grid-cols-3 gap-2">
                 {[...NAV.filter((n) => !MOBILE.some((m) => m.href === n.href)), ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", icon: Gauge }] : [])].map((n) => (
                   <li key={n.href}>

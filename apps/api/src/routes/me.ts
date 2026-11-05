@@ -4,6 +4,7 @@ import { getDb } from "../db/index.js";
 import { HttpError, notFound, parse } from "../lib/http.js";
 import { requireAuth, user } from "../middleware/auth.js";
 import { PRODUCT_SELECT, audienceFor, mapProduct } from "../services/catalog.js";
+import { marketFor } from "../services/markets.js";
 import { loadProfiles } from "../services/profiles.js";
 import { recommendForProducts, summarize } from "./catalog.js";
 
@@ -31,7 +32,7 @@ meRouter.get("/dashboard", async (req, res) => {
        WHERE h.user_id = $1 ORDER BY h.last_checked_at DESC LIMIT 8`,
       [u.id],
     ),
-    db.query(`${PRODUCT_SELECT("$2")} JOIN saved_products s ON s.product_id = p.id AND s.user_id = $1 WHERE p.is_active ORDER BY s.created_at DESC LIMIT 4`, [u.id, audienceFor(u)]),
+    db.query(`${PRODUCT_SELECT("$2", "$3")} JOIN saved_products s ON s.product_id = p.id AND s.user_id = $1 WHERE p.is_active ORDER BY s.created_at DESC LIMIT 4`, [u.id, audienceFor(u), marketFor(req)]),
     db.query(
       `SELECT f.id, f.purchased_size, f.recommended_size, f.overall_fit, f.created_at, b.name AS brand_name, p.name AS product_name
        FROM fit_feedback f JOIN brands b ON b.id = f.brand_id LEFT JOIN products p ON p.id = f.product_id
@@ -41,7 +42,7 @@ meRouter.get("/dashboard", async (req, res) => {
   ]);
 
   const saved = savedRows.rows.map(mapProduct);
-  const recs = primary ? await recommendForProducts(saved, primary, u.id) : new Map();
+  const recs = primary ? await recommendForProducts(saved, primary, u.id, undefined, marketFor(req)) : new Map();
 
   res.json({
     user: u,
@@ -75,12 +76,12 @@ meRouter.get("/saved", async (req, res) => {
   const db = await getDb();
   const u = user(req);
   const { rows } = await db.query(
-    `${PRODUCT_SELECT("$2")} JOIN saved_products s ON s.product_id = p.id AND s.user_id = $1 WHERE p.is_active ORDER BY s.created_at DESC`,
-    [u.id, audienceFor(u)],
+    `${PRODUCT_SELECT("$2", "$3")} JOIN saved_products s ON s.product_id = p.id AND s.user_id = $1 WHERE p.is_active ORDER BY s.created_at DESC`,
+    [u.id, audienceFor(u), marketFor(req)],
   );
   const products = rows.map(mapProduct);
   const [primary] = await loadProfiles(db, u.id);
-  const recs = primary ? await recommendForProducts(products, primary, u.id) : new Map();
+  const recs = primary ? await recommendForProducts(products, primary, u.id, undefined, marketFor(req)) : new Map();
   res.json({ products: products.map((p) => ({ ...p, isSaved: true, recommendation: recs.has(p.id) ? summarize(recs.get(p.id)) : null })) });
 });
 

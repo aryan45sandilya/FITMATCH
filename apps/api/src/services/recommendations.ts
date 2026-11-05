@@ -12,6 +12,7 @@ import {
   type Stretch,
   type Verification,
 } from "../engine/index.js";
+import type { ChartMarket, Market } from "./markets.js";
 import type { Profile } from "./profiles.js";
 
 export interface CategoryRow extends CategoryInput {
@@ -42,6 +43,8 @@ export interface ChartData {
   verification: Verification;
   isDemo: boolean;
   audience: string;
+  market: ChartMarket;
+  notes: string | null;
   sizes: ChartSize[];
 }
 
@@ -49,7 +52,7 @@ export async function loadCharts(q: Queryable, ids: string[]): Promise<Map<strin
   const out = new Map<string, ChartData>();
   if (!ids.length) return out;
   const { rows: charts } = await q.query(
-    `SELECT id, name, measurement_basis, source, source_url, collected_at, verification_status, is_demo, audience
+    `SELECT id, name, measurement_basis, source, source_url, collected_at, verification_status, is_demo, audience, market, notes
      FROM brand_size_charts WHERE id = ANY($1::uuid[])`,
     [ids],
   );
@@ -64,6 +67,8 @@ export async function loadCharts(q: Queryable, ids: string[]): Promise<Map<strin
       verification: c.verification_status as Verification,
       isDemo: c.is_demo as boolean,
       audience: c.audience as string,
+      market: c.market as ChartMarket,
+      notes: (c.notes as string) ?? null,
       sizes: [],
     });
   }
@@ -155,12 +160,25 @@ export async function loadPersonalFeedback(q: Queryable, userId: string) {
   return out;
 }
 
-/** Best chart for a brand + category: verified first, then matching audience, then most recent. */
-export const BEST_CHART_SQL = (brandExpr: string, categoryExpr: string, audienceExpr: string) => `(
+/**
+ * Best chart for a brand + category + market:
+ *  1. a real (non-demo) chart for the shopper's market,
+ *  2. otherwise any real chart (UK/EU first, as the most widely published international chart),
+ *  3. otherwise demonstration data.
+ * Within each tier: verified first, then matching audience, then most recent.
+ */
+export const BEST_CHART_SQL = (brandExpr: string, categoryExpr: string, audienceExpr: string, marketExpr: string) => `(
   SELECT c.id FROM brand_size_charts c
   WHERE c.brand_id = ${brandExpr} AND c.category_id = ${categoryExpr} AND c.verification_status <> 'rejected'
-  ORDER BY (c.verification_status = 'verified') DESC, (c.audience = ${audienceExpr}) DESC, c.collected_at DESC
+  ORDER BY (c.market = ${marketExpr} AND NOT c.is_demo) DESC, (NOT c.is_demo) DESC, (c.market = 'UK_EU') DESC,
+    (c.verification_status = 'verified') DESC, (c.audience = ${audienceExpr}) DESC, c.collected_at DESC
   LIMIT 1)`;
+
+/** "Brand doesn't publish a chart for this market" notes, keyed by brand id. */
+export async function loadMarketNotes(q: Queryable, market: Market): Promise<Map<string, string>> {
+  const { rows } = await q.query<{ brand_id: string; note: string }>("SELECT brand_id, note FROM brand_market_notes WHERE market = $1", [market]);
+  return new Map(rows.map((r) => [r.brand_id, r.note]));
+}
 
 export function resolveFit(profile: Profile, categorySlug: string, override?: Fit | null): Fit {
   return override ?? profile.categoryFits[categorySlug] ?? profile.fitPreference;
@@ -177,6 +195,8 @@ export interface RecommendContext {
   personal?: { offset: number; purchasedSize: string } | null;
   bodyOverride?: Partial<Record<BodyKey, number>>;
   methodOverride?: EngineInput["measurementMethod"];
+  /** Shown as a confidence reason, e.g. when another market's chart is used. */
+  chartNote?: string | null;
 }
 
 export function buildInput(ctx: RecommendContext): EngineInput {
@@ -193,7 +213,7 @@ export function buildInput(ctx: RecommendContext): EngineInput {
     measurementMethod: ctx.methodOverride ?? ctx.profile.measurementMethod,
     fitPreference: ctx.fitPreference,
     product: ctx.product ?? null,
-    chart: ctx.chart ? { basis: ctx.chart.basis, verification: ctx.chart.verification, isDemo: ctx.chart.isDemo, sizes: ctx.chart.sizes } : null,
+    chart: ctx.chart ? { basis: ctx.chart.basis, verification: ctx.chart.verification, isDemo: ctx.chart.isDemo, sizes: ctx.chart.sizes, contextNote: ctx.chartNote ?? null } : null,
     garment: ctx.garment ? { verification: ctx.garment.verification, isDemo: ctx.garment.isDemo, sizes: ctx.garment.sizes } : null,
     communityFeedback: ctx.community ?? null,
     personalFeedback: ctx.personal ?? null,

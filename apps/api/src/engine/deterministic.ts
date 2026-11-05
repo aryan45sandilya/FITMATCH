@@ -336,6 +336,7 @@ export function recommendSync(input: EngineInput): EngineResult {
   };
   if (basis === "garment") reasons.push("Based on this product's own garment measurements.");
   else down(1, "Based on the brand's general size chart, not this product's garment measurements.");
+  if (basis === "body_chart" && input.chart?.contextNote) down(1, input.chart.contextNote);
   if (verification !== "verified") down(1, isDemo ? "Sizing data is demonstration data and has not been verified." : "Sizing data has not been verified yet.");
   if (coverage < 0.7) down(0, "Only part of the relevant measurements could be compared.");
   else if (coverage < 0.9) down(1, "Some relevant measurements were not available to compare.");

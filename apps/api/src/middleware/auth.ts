@@ -10,6 +10,7 @@ export interface SessionUser {
   fullName: string;
   role: "user" | "admin";
   preferredUnit: "cm" | "in";
+  market: "IN" | "US" | "UK_EU";
   genderFit: string | null;
   emailVerified: boolean;
   hasPassword: boolean;
@@ -24,7 +25,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-export const USER_COLUMNS = `u.id, u.email, u.full_name, u.role, u.preferred_unit, u.gender_fit,
+export const USER_COLUMNS = `u.id, u.email, u.full_name, u.role, u.preferred_unit, u.market, u.gender_fit,
   u.email_verified_at, u.password_hash IS NOT NULL AS has_password, u.google_sub IS NOT NULL AS google_linked, u.created_at`;
 
 export function mapUser(r: Record<string, unknown>): SessionUser {
@@ -34,6 +35,7 @@ export function mapUser(r: Record<string, unknown>): SessionUser {
     fullName: r.full_name as string,
     role: r.role as SessionUser["role"],
     preferredUnit: r.preferred_unit as SessionUser["preferredUnit"],
+    market: (r.market as SessionUser["market"]) ?? "IN",
     genderFit: (r.gender_fit as string) ?? null,
     emailVerified: Boolean(r.email_verified_at),
     hasPassword: Boolean(r.has_password),

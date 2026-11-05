@@ -10,9 +10,9 @@ import { NoProfileCallout, RecommendationResult } from "@/components/app/recomme
 import { GarmentIllustration } from "@/components/illustrations/garment";
 import { Button, EmptyState, ErrorState, Input, LinkButton, Notice, PageHeader, Skeleton, cn } from "@/components/ui/primitives";
 import { api, ApiError, qs } from "@/lib/api";
-import { FIT_OPTIONS } from "@/lib/labels";
+import { FIT_OPTIONS, MARKET_LABEL } from "@/lib/labels";
 import { useSession } from "@/lib/session";
-import type { Category, EngineResult, Fit, Product, Profile } from "@/lib/types";
+import type { Category, EngineResult, Fit, Market, Product, Profile } from "@/lib/types";
 import { formatPrice } from "@/lib/units";
 import { useApi } from "@/lib/use-api";
 
@@ -28,6 +28,7 @@ interface RecResponse {
   product?: Product;
   brand?: { name: string; slug: string };
   category?: { name: string; slug: string };
+  chart?: { name: string; market: string; isDemo: boolean; source: string; sourceUrl: string | null } | null;
 }
 
 export default function FindPage() {
@@ -41,7 +42,7 @@ export default function FindPage() {
 function Finder() {
   const router = useRouter();
   const params = useSearchParams();
-  const { unit } = useSession();
+  const { unit, market } = useSession();
   const category = params.get("category");
   const brand = params.get("brand");
   const product = params.get("product"); // slug, or "any" for the brand chart
@@ -98,11 +99,11 @@ function Finder() {
       ) : step === 0 ? (
         <CategoryStep categories={cats.data?.categories} loading={cats.loading} onPick={(slug) => set({ category: slug })} />
       ) : step === 1 ? (
-        <BrandStep category={category!} onPick={(slug) => set({ brand: slug })} />
+        <BrandStep category={category!} market={market} onPick={(slug) => set({ brand: slug })} />
       ) : step === 2 ? (
         <ProductStep category={category!} brand={brand!} onPick={(slug) => set({ product: slug })} />
       ) : (
-        <ResultStep category={category!} brand={brand!} product={product!} unit={unit} categoryName={cat?.name} />
+        <ResultStep key={market} category={category!} brand={brand!} product={product!} unit={unit} market={market} categoryName={cat?.name} />
       )}
     </>
   );
@@ -134,8 +135,8 @@ function CategoryStep({ categories, loading, onPick }: { categories?: Category[]
   );
 }
 
-function BrandStep({ category, onPick }: { category: string; onPick: (slug: string) => void }) {
-  const { data, error, loading, reload } = useApi<{ brands: { id: string; slug: string; name: string; country: string; chartId: string | null; productCount: number }[] }>(`/categories/${category}/brands`);
+function BrandStep({ category, market, onPick }: { category: string; market: Market; onPick: (slug: string) => void }) {
+  const { data, error, loading, reload } = useApi<{ brands: { id: string; slug: string; name: string; country: string; chartId: string | null; chartMarket: string | null; chartIsSourced: boolean | null; productCount: number }[] }>(`/categories/${category}/brands?market=${market}`);
   const [q, setQ] = useState("");
   const list = useMemo(() => (data?.brands ?? []).filter((b) => b.name.toLowerCase().includes(q.trim().toLowerCase())), [data, q]);
   useEffect(() => data?.brands.forEach((b) => (BRAND_NAMES[b.slug] = b.name)), [data]);
@@ -159,7 +160,7 @@ function BrandStep({ category, onPick }: { category: string; onPick: (slug: stri
                 <span>
                   <span className="block text-[18px] font-bold tracking-[-0.02em]">{b.name}</span>
                   <span className="mt-0.5 block text-[12.5px] text-muted">
-                    {b.productCount} product{b.productCount === 1 ? "" : "s"} · {b.chartId ? "size chart on file" : "no brand chart"}
+                    {b.productCount} product{b.productCount === 1 ? "" : "s"} · {!b.chartId ? "no brand chart" : !b.chartIsSourced ? "demo chart only" : b.chartMarket === market ? `${MARKET_LABEL[market]} brand chart` : `${MARKET_LABEL[b.chartMarket as Market]} chart (no ${MARKET_LABEL[market]} chart)`}
                   </span>
                 </span>
                 <ArrowRight className="size-4 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-ink" />
@@ -210,7 +211,7 @@ function ProductStep({ category, brand, onPick }: { category: string; brand: str
   );
 }
 
-function ResultStep({ category, brand, product, unit, categoryName }: { category: string; brand: string; product: string; unit: "cm" | "in"; categoryName?: string }) {
+function ResultStep({ category, brand, product, unit, market, categoryName }: { category: string; brand: string; product: string; unit: "cm" | "in"; market: Market; categoryName?: string }) {
   // `override` is only set when the user picks a fit; the profile's own preference comes back from the API.
   const [override, setOverride] = useState<Fit | null>(null);
   const [data, setData] = useState<RecResponse>();
@@ -222,7 +223,7 @@ function ResultStep({ category, brand, product, unit, categoryName }: { category
   const setFit = setOverride;
 
   useEffect(() => {
-    const body = product === "any" ? { brandSlug: brand, categorySlug: category, fitPreference: override ?? undefined } : { productSlug: product, fitPreference: override ?? undefined };
+    const body = product === "any" ? { brandSlug: brand, categorySlug: category, fitPreference: override ?? undefined, market } : { productSlug: product, fitPreference: override ?? undefined, market };
     // Each request is stored in the user's history, so never send the same one twice (e.g. dev StrictMode re-runs).
     const key = JSON.stringify(body);
     if (lastRequest.current === key) return;
@@ -234,7 +235,7 @@ function ResultStep({ category, brand, product, unit, categoryName }: { category
       .then(setData)
       .catch((e: ApiError) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [category, brand, product, override]);
+  }, [category, brand, product, override, market]);
 
   if (error) return <ErrorState message={error} />;
   if (!data) return <Skeleton className="h-[560px]" />;
@@ -300,6 +301,14 @@ function ResultStep({ category, brand, product, unit, categoryName }: { category
               )}
               {p.isDemo && <p className="text-[11.5px] leading-relaxed text-faint">Demo product — the link opens the brand&apos;s website, not a specific listing.</p>}
             </div>
+          </section>
+        )}
+        {data.chart && (
+          <section className="rounded-md border border-line bg-surface p-5 text-[12.5px] leading-relaxed text-muted">
+            <h3 className="mb-1 text-[14px] font-semibold text-ink">Sizing source</h3>
+            <p>{data.chart.name}</p>
+            <p className="mt-1">{data.chart.isDemo ? "Demonstration data — not the brand's chart." : `${MARKET_LABEL[data.chart.market as Market]} chart from ${data.chart.source}.`}</p>
+            {data.chart.sourceUrl && <a href={data.chart.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-ink hover:underline">View brand's chart <ExternalLink className="size-3" /></a>}
           </section>
         )}
         <Link href={`/app/compare?category=${category}`} className="flex items-center justify-between rounded-md bg-night px-5 py-4 text-[14px] font-semibold text-canvas">

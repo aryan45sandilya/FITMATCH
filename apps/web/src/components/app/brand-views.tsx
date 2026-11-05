@@ -2,12 +2,13 @@
 
 import { ArrowLeft, ArrowRight, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "@/lib/session";
-import type { Brand, Category, ChartData } from "@/lib/types";
+import type { Brand, Category, ChartData, Market } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
-import { relativeTime } from "@/lib/labels";
-import { Badge, EmptyState, ErrorState, Input, LinkButton, Segmented, Skeleton, cn } from "../ui/primitives";
+import { MARKET_LABEL, MARKET_OPTIONS, relativeTime } from "@/lib/labels";
+import { Badge, EmptyState, ErrorState, Input, LinkButton, Notice, Segmented, Skeleton, cn } from "../ui/primitives";
+import { MarketPicker } from "./market-picker";
 import { SizeTable } from "./chart-table";
 
 export function BrandDirectory({ basePath }: { basePath: string }) {
@@ -98,13 +99,28 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
   );
 }
 
+type BrandChart = ChartData & { categorySlug: string };
+
+/** Picks the chart to show for a category + market: the market's own real chart, then any real chart, then demo. */
+function chartFor(charts: BrandChart[], category: string, market: Market) {
+  const pool = charts.filter((c) => c.categorySlug === category);
+  return (
+    pool.find((c) => c.market === market && !c.isDemo) ??
+    pool.find((c) => !c.isDemo && c.market === "UK_EU") ??
+    pool.find((c) => !c.isDemo) ??
+    pool[0]
+  );
+}
+
 export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHref: string; findHref?: string }) {
-  const { data, error, loading, reload } = useApi<{ brand: Brand; charts: (ChartData & { categorySlug: string })[] }>(`/brands/${slug}`);
+  const { data, error, loading, reload } = useApi<{ brand: Brand; charts: BrandChart[]; marketNotes: { market: Market; note: string }[] }>(`/brands/${slug}`);
   const categories = useApi<{ categories: Category[] }>("/categories");
-  const { unit, setUnit, user } = useSession();
+  const { unit, setUnit, user, market: sessionMarket } = useSession();
   const [active, setActive] = useState<string | null>(null);
+  const [market, setMarket] = useState<Market>(sessionMarket);
   const [localUnit, setLocalUnit] = useState<"cm" | "in">("cm");
   const u = user ? unit : localUnit;
+  useEffect(() => setMarket(sessionMarket), [sessionMarket]);
 
   if (error) return <ErrorState message={error.message} onRetry={reload} />;
   if (loading || !data)
@@ -116,9 +132,14 @@ export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHr
       </div>
     );
 
-  const charts = data.charts;
-  const current = charts.find((c) => c.categorySlug === active) ?? charts[0];
+  const catOrder = categories.data?.categories.map((c) => c.slug) ?? [];
+  const catSlugs = [...new Set(data.charts.map((c) => c.categorySlug))].sort((a, b) => catOrder.indexOf(a) - catOrder.indexOf(b));
+  const activeCat = active && catSlugs.includes(active) ? active : catSlugs[0];
+  const current = activeCat ? chartFor(data.charts, activeCat, market) : undefined;
   const catName = (s: string) => categories.data?.categories.find((c) => c.slug === s)?.name ?? s;
+  const note = data.marketNotes.find((n) => n.market === market)?.note;
+  const marketsWithData = new Set(data.charts.filter((c) => !c.isDemo).map((c) => c.market));
+  const fallback = current && current.market !== market;
 
   return (
     <div>
@@ -130,9 +151,15 @@ export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHr
           <p className="eyebrow mb-3">{data.brand.country}</p>
           <h1 className="text-[38px] leading-none font-bold tracking-[-0.035em] md:text-[52px]">{data.brand.name}</h1>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted">{data.brand.description}</p>
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {MARKET_OPTIONS.map((m) => (
+              <Badge key={m.value} tone={marketsWithData.has(m.value) ? "success" : "muted"}>
+                {m.label}: {marketsWithData.has(m.value) ? "brand chart" : "not published"}
+              </Badge>
+            ))}
+          </div>
         </div>
         <div className="flex flex-col gap-3 md:items-end">
-          {data.brand.sizingNotes && <p className="text-[13.5px] leading-relaxed text-ink/80 md:text-right">{data.brand.sizingNotes}</p>}
           <div className="flex flex-wrap gap-2">
             {findHref && <LinkButton href={findHref} size="sm">Find my size</LinkButton>}
             {data.brand.websiteUrl && (
@@ -144,21 +171,32 @@ export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHr
         </div>
       </div>
 
-      {charts.length === 0 ? (
+      {catSlugs.length === 0 ? (
         <EmptyState title="No size charts yet" body="We haven't collected sizing data for this brand yet." />
       ) : (
         <>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              {charts.map((c) => (
-                <Chip key={c.id} active={current?.id === c.id} onClick={() => setActive(c.categorySlug)}>
-                  {catName(c.categorySlug)}
+              {catSlugs.map((c) => (
+                <Chip key={c} active={activeCat === c} onClick={() => setActive(c)}>
+                  {catName(c)}
                 </Chip>
               ))}
             </div>
-            <Segmented label="Units" size="sm" value={u} onChange={(v) => (user ? void setUnit(v) : setLocalUnit(v))} options={[{ value: "cm", label: "cm" }, { value: "in", label: "in" }]} />
+            <div className="flex flex-wrap items-center gap-2">
+              <MarketPicker variant="compact" value={market} onChange={setMarket} />
+              <Segmented label="Units" size="sm" value={u} onChange={(v) => (user ? void setUnit(v) : setLocalUnit(v))} options={[{ value: "cm", label: "cm" }, { value: "in", label: "in" }]} />
+            </div>
           </div>
+          {fallback && current && (
+            <Notice tone={current.isDemo ? "warning" : "accent"} className="mb-4">
+              {current.isDemo
+                ? `${data.brand.name} has no published ${MARKET_LABEL[market]} chart for ${catName(activeCat!).toLowerCase()} on file — showing demonstration data.`
+                : `${data.brand.name} doesn't publish ${market === "IN" ? "an" : "a"} ${MARKET_LABEL[market]} chart${note ? ` (${note.replace(/\.$/, "")})` : ""}. Showing their ${MARKET_LABEL[current.market]} chart instead.`}
+            </Notice>
+          )}
           {current && <SizeTable chart={current} unit={u} caption={current.name} />}
+          {current?.notes && !current.isDemo && <p className="mt-3 text-[12.5px] leading-relaxed text-muted">Note: {current.notes}</p>}
         </>
       )}
     </div>

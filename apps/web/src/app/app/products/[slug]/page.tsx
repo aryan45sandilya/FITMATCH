@@ -29,12 +29,12 @@ interface Detail {
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { unit, setUnit } = useSession();
+  const { unit, setUnit, market } = useSession();
   const [fit, setFit] = useState<Fit | null>(null);
   const [view, setView] = useState(0);
   const [tab, setTab] = useState<"garment" | "chart">("garment");
   const [feedback, setFeedback] = useState<FeedbackTarget | null>(null);
-  const { data, error, loading, reload } = useApi<Detail>(`/products/${slug}${qs({ fit })}`);
+  const { data, error, loading, reload } = useApi<Detail>(`/products/${slug}${qs({ fit, market })}`);
 
   if (error) return <ErrorState message={error.status === 404 ? "We couldn't find that product." : error.message} onRetry={reload} />;
   if (!data) return <DetailSkeleton />;

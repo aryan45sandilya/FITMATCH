@@ -10,15 +10,17 @@ import { Chip } from "@/components/app/brand-views";
 import { NoProfileCallout } from "@/components/app/recommendation";
 import { Badge, ErrorState, Field, Notice, PageHeader, Segmented, Select, Skeleton, cn } from "@/components/ui/primitives";
 import { api, ApiError } from "@/lib/api";
-import { CONFIDENCE, MEASUREMENT_LABEL, POINT_STATUS, QUALITY } from "@/lib/labels";
+import { CONFIDENCE, MARKET_LABEL, MEASUREMENT_LABEL, POINT_STATUS, QUALITY } from "@/lib/labels";
 import { useSession } from "@/lib/session";
-import type { Brand, Category, ChartData, EngineResult, Profile, Unit } from "@/lib/types";
+import type { Brand, Category, ChartData, ChartMarket, EngineResult, Market, Profile, Unit } from "@/lib/types";
+import { MarketPicker } from "@/components/app/market-picker";
 import { formatLength, formatRange } from "@/lib/units";
 import { useApi } from "@/lib/use-api";
 
 interface Row {
   brand: { id: string; slug: string; name: string };
-  chart: { id: string; name: string; verification: string; isDemo: boolean } | null;
+  chart: { id: string; name: string; verification: string; isDemo: boolean; market: ChartMarket; source: string; sourceUrl: string | null } | null;
+  marketNote: string | null;
   productCount: number;
   productsWithGarmentData: number;
   result: EngineResult;
@@ -39,7 +41,9 @@ export default function ComparePage() {
 function Compare() {
   const params = useSearchParams();
   const router = useRouter();
-  const { unit } = useSession();
+  const { unit, market: sessionMarket } = useSession();
+  const [market, setMarket] = useState<Market>(sessionMarket);
+  useEffect(() => setMarket(sessionMarket), [sessionMarket]);
   const cats = useApi<{ categories: Category[] }>("/categories");
   const brands = useApi<{ brands: Brand[] }>("/brands");
   const profiles = useApi<{ profiles: Profile[] }>("/profiles");
@@ -56,7 +60,9 @@ function Compare() {
   const [open, setOpen] = useState<string | null>(null);
 
   const refChart = useApi<{ charts: (ChartData & { categorySlug: string })[] }>(mode === "reference" ? `/brands/${refBrand}` : null);
-  const refSizes = refChart.data?.charts.find((c) => c.categorySlug === category)?.sizes.map((s) => s.label) ?? [];
+  const refPool = refChart.data?.charts.filter((c) => c.categorySlug === category) ?? [];
+  const refBest = refPool.find((c) => c.market === market && !c.isDemo) ?? refPool.find((c) => !c.isDemo && c.market === "UK_EU") ?? refPool.find((c) => !c.isDemo) ?? refPool[0];
+  const refSizes = refBest?.sizes.map((s) => s.label) ?? [];
   useEffect(() => {
     if (refSizes.length && !refSizes.includes(refSize)) setRefSize(refSizes[Math.floor(refSizes.length / 2)]!);
   }, [refSizes, refSize]);
@@ -73,11 +79,12 @@ function Compare() {
         categorySlug: category,
         brandSlugs: selected.length ? selected : undefined,
         reference: mode === "reference" ? { brandSlug: refBrand, size: refSize } : undefined,
+        market,
       })
       .then(setData)
       .catch((e: ApiError) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [category, selected, mode, refBrand, refSize, canRun, profiles.loading]);
+  }, [category, selected, mode, refBrand, refSize, canRun, profiles.loading, market]);
 
   const rows = useMemo(() => {
     const r = [...(data?.rows ?? [])];
@@ -96,7 +103,10 @@ function Compare() {
         <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
           {cats.data?.categories.map((c) => <Chip key={c.slug} active={c.slug === category} onClick={() => setCategory(c.slug)}>{c.name}</Chip>)}
         </div>
-        <div className="grid gap-4 border-t border-line pt-5 md:grid-cols-[auto_1fr] md:items-end md:gap-8">
+        <div className="grid gap-4 border-t border-line pt-5 md:grid-cols-[auto_auto_1fr] md:items-end md:gap-8">
+          <Field label="Market">
+            <MarketPicker value={market} onChange={setMarket} variant="compact" />
+          </Field>
           <Field label="Compare using">
             <Segmented label="Compare using" value={mode} onChange={setMode} options={[{ value: "profile", label: "My measurements" }, { value: "reference", label: "A size I wear" }]} />
           </Field>
@@ -169,7 +179,7 @@ function Compare() {
                         </td>
                         <td className="px-5 py-4">{res.status === "ok" ? <QualityBadge q={res.matchQuality} /> : "—"}</td>
                         <td className="px-5 py-4 text-[13px] text-muted">{res.status === "ok" ? CONFIDENCE[res.confidence].label.replace(" confidence", "") : "—"}</td>
-                        <td className="px-5 py-4">{r.chart?.isDemo ? <DemoDataBadge /> : r.chart?.verification === "verified" ? <Badge tone="success">Verified</Badge> : <Badge tone="muted">Unverified</Badge>}</td>
+                        <td className="px-5 py-4"><ChartBadge row={r} market={market} /></td>
                         <td className="px-5 py-4">
                           <button type="button" aria-expanded={isOpen} aria-label={`Show details for ${r.brand.name}`} className="grid size-8 place-items-center rounded-sm text-muted hover:text-ink">
                             <ChevronDown className={cn("size-4 transition-transform", isOpen && "rotate-180")} />
@@ -202,6 +212,7 @@ function Compare() {
                       <span className="mt-1 flex flex-wrap items-center gap-1.5">
                         {res.status === "ok" ? <QualityBadge q={res.matchQuality} /> : <span className="text-[12.5px] text-faint">{res.status === "missing_measurements" ? "Needs measurements" : "Insufficient data"}</span>}
                         {res.status === "ok" && res.alternativeSize && <span className="num text-[12px] text-muted">or {res.alternativeSize}</span>}
+                        <ChartBadge row={r} market={market} />
                       </span>
                     </span>
                     <ChevronDown className={cn("size-4 shrink-0 text-muted transition-transform", isOpen && "rotate-180")} />
@@ -224,6 +235,15 @@ function Compare() {
       )}
     </>
   );
+}
+
+function ChartBadge({ row, market }: { row: Row; market: Market }) {
+  const c = row.chart;
+  if (!c) return <Badge tone="muted">No chart</Badge>;
+  if (c.isDemo) return <DemoDataBadge />;
+  const label = `${MARKET_LABEL[c.market]} chart`;
+  if (c.market !== market) return <span title={row.marketNote ?? undefined}><Badge tone="warning">{label}</Badge></span>;
+  return <Badge tone={c.verification === "verified" ? "success" : "accent"}>{c.verification === "verified" ? `${label} · verified` : label}</Badge>;
 }
 
 function FragmentRow({ children }: { children: React.ReactNode }) {

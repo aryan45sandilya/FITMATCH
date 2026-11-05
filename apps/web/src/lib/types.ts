@@ -1,5 +1,7 @@
 export type Fit = "slim" | "regular" | "relaxed" | "oversized";
 export type Unit = "cm" | "in";
+export type Market = "IN" | "US" | "UK_EU";
+export type ChartMarket = Market | "GLOBAL";
 export type BodyKey =
   | "chest" | "shoulder" | "neck" | "sleeve" | "bicep" | "arm_length"
   | "waist" | "hip" | "thigh" | "inseam" | "outseam" | "calf";
@@ -14,6 +16,7 @@ export interface User {
   fullName: string;
   role: "user" | "admin";
   preferredUnit: Unit;
+  market: Market;
   genderFit: string | null;
   emailVerified: boolean;
   hasPassword: boolean;
@@ -151,6 +154,8 @@ export interface ChartData {
   verification: Verification;
   isDemo: boolean;
   audience: string;
+  market: ChartMarket;
+  notes?: string | null;
   sizes: { label: string; sortOrder: number; points: Partial<Record<MeasurementKey, { min: number; max: number }>> }[];
 }
 

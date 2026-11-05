@@ -63,6 +63,8 @@ export interface EngineInput {
     verification: Verification;
     isDemo: boolean;
     sizes: ChartSize[];
+    /** e.g. "Using the UK/EU chart — Levi's doesn't publish an India chart." Caps confidence at moderate. */
+    contextNote?: string | null;
   } | null;
   /** Product-level garment measurements. */
   garment?: {

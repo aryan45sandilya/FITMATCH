@@ -5,11 +5,13 @@ import type { BodyKey, EngineResult, Fit } from "../engine/index.js";
 import { HttpError, notFound, parse } from "../lib/http.js";
 import { requireAuth, user } from "../middleware/auth.js";
 import { audienceFor, findProduct } from "../services/catalog.js";
+import { MARKET_LABEL, chartMarketNote, marketFor } from "../services/markets.js";
 import { loadProfileOrPrimary } from "../services/profiles.js";
 import {
   BEST_CHART_SQL,
   loadCategories,
   loadCharts,
+  loadMarketNotes,
   loadPersonalFeedback,
   persistRecommendation,
   resolveFit,
@@ -29,6 +31,7 @@ const recommendSchema = z
     categorySlug: z.string().max(80).optional(),
     profileId: z.string().uuid().optional(),
     fitPreference: fit.optional(),
+    market: z.enum(["IN", "US", "UK_EU"]).optional(),
   })
   .refine((b) => b.productSlug || (b.brandSlug && b.categorySlug), "Choose a product, or a brand and a category.");
 
@@ -39,6 +42,7 @@ recommendRouter.post("/recommendations", requireAuth, async (req, res) => {
   const u = user(req);
   const profile = await loadProfileOrPrimary(db, u.id, body.profileId);
   if (!profile) throw new HttpError(409, "Create a measurement profile first.", "no_profile");
+  const market = marketFor(req, body.market);
 
   let result: EngineResult;
   let brandId: string;
@@ -48,10 +52,10 @@ recommendRouter.post("/recommendations", requireAuth, async (req, res) => {
   let context: Record<string, unknown>;
 
   if (body.productSlug) {
-    const product = await findProduct(db, { slug: body.productSlug }, audienceFor(u));
+    const product = await findProduct(db, { slug: body.productSlug }, audienceFor(u), market);
     if (!product) throw notFound("Product");
     fitPref = resolveFit(profile, product.category.slug, body.fitPreference);
-    result = (await recommendForProducts([product], profile, u.id, body.fitPreference)).get(product.id)!;
+    result = (await recommendForProducts([product], profile, u.id, body.fitPreference, market)).get(product.id)!;
     brandId = product.brand.id;
     categoryId = product.category.id;
     productId = product.id;
@@ -61,28 +65,35 @@ recommendRouter.post("/recommendations", requireAuth, async (req, res) => {
     const category = categories.find((c) => c.slug === body.categorySlug);
     if (!category) throw notFound("Category");
     const { rows } = await db.query<{ id: string; name: string; slug: string; chart_id: string | null }>(
-      `SELECT b.id, b.name, b.slug, ${BEST_CHART_SQL("b.id", "$2", "$3")} AS chart_id FROM brands b WHERE b.slug = $1 AND b.is_active`,
-      [body.brandSlug, category.id, audienceFor(u)],
+      `SELECT b.id, b.name, b.slug, ${BEST_CHART_SQL("b.id", "$2", "$3", "$4")} AS chart_id FROM brands b WHERE b.slug = $1 AND b.is_active`,
+      [body.brandSlug, category.id, audienceFor(u), market],
     );
     const brand = rows[0];
     if (!brand) throw notFound("Brand");
     const charts = await loadCharts(db, brand.chart_id ? [brand.chart_id] : []);
     const personal = await loadPersonalFeedback(db, u.id);
+    const notes = await loadMarketNotes(db, market);
+    const chart = brand.chart_id ? charts.get(brand.chart_id) ?? null : null;
     fitPref = resolveFit(profile, category.slug, body.fitPreference);
     result = await runEngine({
       profile,
       category,
       fitPreference: fitPref,
-      chart: brand.chart_id ? charts.get(brand.chart_id) : null,
+      chart,
+      chartNote: chart ? chartMarketNote(brand.name, chart.market, market, notes.get(brand.id)) : null,
       personal: personal.get(`${brand.id}:${category.id}`) ?? null,
     });
     brandId = brand.id;
     categoryId = category.id;
-    context = { brand: { id: brand.id, slug: brand.slug, name: brand.name }, category: { id: category.id, slug: category.slug, name: category.name } };
+    context = {
+      brand: { id: brand.id, slug: brand.slug, name: brand.name },
+      category: { id: category.id, slug: category.slug, name: category.name },
+      chart: chart ? { id: chart.id, name: chart.name, market: chart.market, isDemo: chart.isDemo, verification: chart.verification, source: chart.source, sourceUrl: chart.sourceUrl } : null,
+    };
   }
 
   const recommendationId = await persistRecommendation(db, { userId: u.id, profileId: profile.id, brandId, categoryId, productId, fit: fitPref, result });
-  res.json({ recommendationId, result, fitPreference: fitPref, profile: { id: profile.id, name: profile.name }, ...context });
+  res.json({ recommendationId, result, fitPreference: fitPref, market, profile: { id: profile.id, name: profile.name }, ...context });
 });
 
 const compareSchema = z.object({
@@ -91,7 +102,8 @@ const compareSchema = z.object({
   profileId: z.string().uuid().optional(),
   fitPreference: fit.optional(),
   /** "I normally wear size M in Zara" */
-  reference: z.object({ brandSlug: z.string().max(80), size: z.string().max(12) }).optional(),
+  reference: z.object({ brandSlug: z.string().max(80), size: z.string().max(12), market: z.enum(["IN", "US", "UK_EU"]).optional() }).optional(),
+  market: z.enum(["IN", "US", "UK_EU"]).optional(),
   /** false for previews (e.g. the dashboard) so they do not count as a brand check */
   record: z.boolean().default(true),
 });
@@ -103,6 +115,7 @@ recommendRouter.post("/compare", requireAuth, async (req, res) => {
   const categories = await loadCategories(db);
   const category = categories.find((c) => c.slug === body.categorySlug);
   if (!category) throw notFound("Category");
+  const market = marketFor(req, body.market);
 
   const profile = await loadProfileOrPrimary(db, u.id, body.profileId);
   if (!profile && !body.reference) throw new HttpError(409, "Create a measurement profile, or tell us a size you already wear.", "no_profile");
@@ -113,22 +126,23 @@ recommendRouter.post("/compare", requireAuth, async (req, res) => {
   };
 
   const { rows: brandRows } = await db.query<{ id: string; slug: string; name: string; chart_id: string | null; product_count: number; garment_products: number }>(
-    `SELECT b.id, b.slug, b.name, ${BEST_CHART_SQL("b.id", "$1", "$3")} AS chart_id,
+    `SELECT b.id, b.slug, b.name, ${BEST_CHART_SQL("b.id", "$1", "$3", "$4")} AS chart_id,
        (SELECT count(*)::int FROM products p WHERE p.brand_id = b.id AND p.category_id = $1 AND p.is_active) AS product_count,
        (SELECT count(DISTINCT p.id)::int FROM products p JOIN product_variants v ON v.product_id = p.id JOIN product_measurements m ON m.variant_id = v.id
           WHERE p.brand_id = b.id AND p.category_id = $1 AND p.is_active) AS garment_products
      FROM brands b WHERE b.is_active AND ($2::text[] IS NULL OR b.slug = ANY($2)) ORDER BY b.name`,
-    [category.id, body.brandSlugs?.length ? body.brandSlugs : null, audienceFor(u)],
+    [category.id, body.brandSlugs?.length ? body.brandSlugs : null, audienceFor(u), market],
   );
   const charts = await loadCharts(db, brandRows.map((b) => b.chart_id).filter((x): x is string => Boolean(x)));
+  const notes = await loadMarketNotes(db, market);
 
   // Reference mode: estimate body measurements from the midpoint of the size the user already wears.
   let bodyOverride: Partial<Record<BodyKey, number>> | undefined;
   let referenceNote: string | null = null;
   if (body.reference) {
     const { rows } = await db.query<{ chart_id: string | null; name: string }>(
-      `SELECT b.name, ${BEST_CHART_SQL("b.id", "$2", "$3")} AS chart_id FROM brands b WHERE b.slug = $1`,
-      [body.reference.brandSlug, category.id, audienceFor(u)],
+      `SELECT b.name, ${BEST_CHART_SQL("b.id", "$2", "$3", "$4")} AS chart_id FROM brands b WHERE b.slug = $1`,
+      [body.reference.brandSlug, category.id, audienceFor(u), body.reference.market ?? market],
     );
     const ref = rows[0];
     if (!ref?.chart_id) throw new HttpError(422, "We don't have a size chart for that brand in this category.", "no_reference_chart");
@@ -137,7 +151,8 @@ recommendRouter.post("/compare", requireAuth, async (req, res) => {
     if (!size) throw new HttpError(422, `Size ${body.reference.size} isn't in ${ref.name}'s chart for ${category.name.toLowerCase()}.`, "unknown_size", { sizes: refChart.sizes.map((s) => s.label) });
     bodyOverride = { ...baseProfile.measurements };
     for (const [k, r] of Object.entries(size.points)) bodyOverride[k as BodyKey] = Math.round(((r.min + r.max) / 2) * 10) / 10;
-    referenceNote = `Estimated from the middle of ${ref.name} size ${size.label}. Your exact measurements give a more reliable result.`;
+    const refMarket = refChart.isDemo ? "" : ` (${MARKET_LABEL[refChart.market]} chart)`;
+    referenceNote = `Estimated from the middle of ${ref.name} size ${size.label}${refMarket}. Your exact measurements give a more reliable result.`;
   }
 
   const fitPref = resolveFit(baseProfile, category.slug, body.fitPreference);
@@ -151,13 +166,15 @@ recommendRouter.post("/compare", requireAuth, async (req, res) => {
       category,
       fitPreference: fitPref,
       chart,
+      chartNote: chart ? chartMarketNote(b.name, chart.market, market, notes.get(b.id)) : null,
       personal: personal.get(`${b.id}:${category.id}`) ?? null,
       bodyOverride,
       methodOverride: body.reference ? "estimated" : undefined,
     });
     rows.push({
       brand: { id: b.id, slug: b.slug, name: b.name },
-      chart: chart ? { id: chart.id, name: chart.name, verification: chart.verification, isDemo: chart.isDemo, source: chart.source, collectedAt: chart.collectedAt } : null,
+      chart: chart ? { id: chart.id, name: chart.name, market: chart.market, verification: chart.verification, isDemo: chart.isDemo, source: chart.source, sourceUrl: chart.sourceUrl, collectedAt: chart.collectedAt } : null,
+      marketNote: notes.get(b.id) ?? null,
       productCount: b.product_count,
       productsWithGarmentData: b.garment_products,
       result,
@@ -180,6 +197,7 @@ recommendRouter.post("/compare", requireAuth, async (req, res) => {
   res.json({
     category: { id: category.id, slug: category.slug, name: category.name, requiredMeasurements: category.requiredMeasurements },
     fitPreference: fitPref,
+    market,
     profile: profile ? { id: profile.id, name: profile.name } : null,
     referenceNote,
     rows,

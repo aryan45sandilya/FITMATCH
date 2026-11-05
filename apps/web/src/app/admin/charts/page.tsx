@@ -12,7 +12,7 @@ import type { Verification } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 
 interface ChartRow {
-  id: string; name: string; audience: string; basis: string; source: string; collectedAt: string; verification: Verification;
+  id: string; name: string; audience: string; market: string; basis: string; source: string; collectedAt: string; verification: Verification;
   verifiedAt: string | null; isDemo: boolean; brandName: string; categoryName: string; sizeCount: number;
 }
 
@@ -38,7 +38,7 @@ function Charts() {
             <tbody>
               {data?.charts.map((c) => (
                 <tr key={c.id} className="border-b border-line last:border-0 hover:bg-canvas/40">
-                  <td className="px-4 py-3"><Link href={`/admin/charts/${c.id}`} className="font-semibold hover:underline">{c.brandName}</Link><p className="text-[12px] text-muted">{c.name} · {c.audience} · {c.basis}</p></td>
+                  <td className="px-4 py-3"><Link href={`/admin/charts/${c.id}`} className="font-semibold hover:underline">{c.brandName}</Link><p className="text-[12px] text-muted">{c.name} · {c.market === "GLOBAL" ? "demo" : c.market.replace("_", "/")} · {c.basis}</p></td>
                   <td className="px-3">{c.categoryName}</td>
                   <td className="num px-3">{c.sizeCount}</td>
                   <td className="max-w-56 truncate px-3 text-[12.5px] text-muted" title={c.source}>{c.source}</td>

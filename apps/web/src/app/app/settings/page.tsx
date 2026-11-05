@@ -5,6 +5,7 @@ import { Badge, Button, Field, Input, Notice, PageHeader, Panel, Segmented, Sele
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { MarketPicker } from "@/components/app/market-picker";
 import type { User } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -88,6 +89,9 @@ export default function SettingsPage() {
                 <option value="unisex">Unisex</option>
                 <option value="no_preference">No preference</option>
               </Select>
+            </Field>
+            <Field label="Size chart market" hint="Recommendations use each brand's chart for this market." className="sm:col-span-2">
+              <MarketPicker />
             </Field>
             <Field label="Measurement units">
               <Segmented label="Measurement units" value={unit} onChange={setUnit} options={[{ value: "cm", label: "Centimetres" }, { value: "in", label: "Inches" }]} />

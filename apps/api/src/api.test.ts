@@ -103,18 +103,30 @@ describe("measurement profile → recommendation journey", () => {
     expect(created.body.profile.isPrimary).toBe(true);
     expect(created.body.profile.measurements.chest).toBe(100);
 
+    // H&M has a real (sourced) India chart, which beats the product's demo garment data.
     const product = await agent.post("/api/recommendations").send({ productSlug: "hm-regular-fit-cotton-tee" });
     expect(product.status).toBe(200);
     expect(product.body.result.status).toBe("ok");
-    expect(product.body.result.basis).toBe("garment");
-    expect(product.body.result.recommendedSize).toBe("M");
-    expect(product.body.result.isDemoData).toBe(true);
+    expect(product.body.result.basis).toBe("body_chart");
+    expect(product.body.result.isDemoData).toBe(false);
+    expect(product.body.market).toBe("IN");
+
+    // Uniqlo has no sourced chart, so the product's (demo) garment data is used.
+    const garment = await agent.post("/api/recommendations").send({ productSlug: "uniqlo-supima-crew-tee" });
+    expect(garment.body.result.basis).toBe("garment");
+    expect(garment.body.result.isDemoData).toBe(true);
 
     const brand = await agent.post("/api/recommendations").send({ brandSlug: "levis", categorySlug: "jeans" });
     expect(brand.body.result.status).toBe("ok");
     expect(brand.body.result.basis).toBe("body_chart");
 
-    const none = await agent.post("/api/recommendations").send({ productSlug: "nike-tech-knit-joggers" });
+    // Nike's joggers have no garment data but Nike publishes a bottoms chart, so they now get a real result.
+    const joggers = await agent.post("/api/recommendations").send({ productSlug: "nike-tech-knit-joggers" });
+    expect(joggers.body.result.status).toBe("ok");
+    expect(joggers.body.result.isDemoData).toBe(false);
+
+    // Zara publishes no general chart and has no shorts data at all: no guessing.
+    const none = await agent.post("/api/recommendations").send({ brandSlug: "zara", categorySlug: "shorts" });
     expect(none.body.result.status).toBe("insufficient_data");
     expect(none.body.result.message).toBe(INSUFFICIENT_MESSAGE);
 
@@ -171,9 +183,52 @@ describe("measurement profile → recommendation journey", () => {
     expect(detail.status).toBe(200);
     expect(detail.body.recommendation).toBeNull();
     expect(detail.body.garment.sizes.length).toBeGreaterThan(3);
-    expect(detail.body.chart.isDemo).toBe(true);
+    expect(detail.body.chart.isDemo).toBe(false);
+    expect(detail.body.chart.market).toBe("UK_EU"); // Levi's publishes no India chart
+    expect(detail.body.chart.sourceUrl.startsWith("https://www.levi.com/")).toBe(true);
     const brands = await request(app).get("/api/brands");
     expect(brands.body.brands).toHaveLength(10);
+  });
+});
+
+describe("markets", () => {
+  it("uses each market's own published chart and labels fallbacks", async () => {
+    const { agent } = await signup();
+    await agent.post("/api/profiles").send({ heightCm: 180, measurements });
+
+    const india = await agent.post("/api/recommendations").send({ brandSlug: "hm", categorySlug: "t-shirts" });
+    expect(india.body.chart.market).toBe("IN");
+    expect(india.body.chart.isDemo).toBe(false);
+
+    await agent.patch("/api/auth/account").send({ market: "US" });
+    const us = await agent.post("/api/recommendations").send({ brandSlug: "hm", categorySlug: "t-shirts" });
+    expect(us.body.market).toBe("US");
+    expect(us.body.chart.market).toBe("US");
+    // US chart: M covers chest 94–102 cm, so a 100 cm chest is comfortably M.
+    expect(us.body.result.recommendedSize).toBe("M");
+
+    await agent.patch("/api/auth/account").send({ market: "IN" });
+    const levis = await agent.post("/api/recommendations").send({ brandSlug: "levis", categorySlug: "jeans" });
+    expect(levis.body.chart.market).toBe("UK_EU");
+    expect(levis.body.result.confidenceReasons.join(" ")).toMatch(/UK & Europe chart.*no India chart/);
+  });
+
+  it("compares brands for an explicitly chosen market", async () => {
+    const { agent } = await signup();
+    await agent.post("/api/profiles").send({ heightCm: 180, measurements });
+    const res = await agent.post("/api/compare").send({ categorySlug: "t-shirts", market: "UK_EU" });
+    expect(res.body.market).toBe("UK_EU");
+    const nike = res.body.rows.find((r: { brand: { slug: string } }) => r.brand.slug === "nike");
+    expect(nike.chart.market).toBe("UK_EU");
+    expect(nike.chart.isDemo).toBe(false);
+    // Zara publishes no general chart anywhere, so it stays on clearly-labelled demo data.
+    const zara = res.body.rows.find((r: { brand: { slug: string } }) => r.brand.slug === "zara");
+    expect(zara.chart.isDemo).toBe(true);
+  });
+
+  it("stores the market chosen at sign-up", async () => {
+    const res = await request(app).post("/api/auth/signup").send({ fullName: "Sam", email: `m${Date.now()}@test.local`, password: "correct-horse-9", market: "UK_EU" });
+    expect(res.body.user.market).toBe("UK_EU");
   });
 });
 
@@ -190,7 +245,7 @@ describe("admin", () => {
     expect(overview.body.counts.brands).toBe(10);
 
     const charts = await agent.get("/api/admin/charts");
-    const demo = charts.body.charts[0];
+    const demo = charts.body.charts.find((c: { isDemo: boolean }) => c.isDemo);
     const refuse = await agent.post(`/api/admin/charts/${demo.id}/verification`).send({ status: "verified" });
     expect(refuse.status).toBe(422);
 

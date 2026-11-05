@@ -5,12 +5,14 @@ import type { EngineResult, Fit } from "../engine/index.js";
 import { notFound, parse } from "../lib/http.js";
 import { PRODUCT_SELECT, audienceFor, findProduct, mapProduct, type ProductRow } from "../services/catalog.js";
 import { loadProfileOrPrimary, type Profile } from "../services/profiles.js";
+import { chartMarketNote, marketFor, type Market } from "../services/markets.js";
 import {
   BEST_CHART_SQL,
   loadCategories,
   loadCharts,
   loadCommunityFeedback,
   loadGarments,
+  loadMarketNotes,
   loadPersonalFeedback,
   resolveFit,
   runEngine,
@@ -68,9 +70,11 @@ catalogRouter.get("/brands/:slug", async (req, res) => {
     [brand.id],
   );
   const loaded = await loadCharts(db, charts.map((c) => c.id));
+  const { rows: notes } = await db.query('SELECT market, note, checked_at AS "checkedAt" FROM brand_market_notes WHERE brand_id = $1', [brand.id]);
   res.json({
     brand,
     charts: charts.map((c) => ({ categorySlug: (c as unknown as { category_slug: string }).category_slug, ...loaded.get(c.id)! })),
+    marketNotes: notes,
   });
 });
 
@@ -98,27 +102,33 @@ export interface ProductRecommendationSummary {
 }
 
 /** Compute recommendations for many products at once with bulk-loaded data. */
-export async function recommendForProducts(products: ProductRow[], profile: Profile, userId: string, fitOverride?: Fit | null) {
+export async function recommendForProducts(products: ProductRow[], profile: Profile, userId: string, fitOverride: Fit | null | undefined, market: Market) {
   const db = await getDb();
   const ids = products.map((p) => p.id);
-  const [categories, charts, garments, community, personal] = await Promise.all([
+  const [categories, charts, garments, community, personal, notes] = await Promise.all([
     loadCategories(db),
     loadCharts(db, [...new Set(products.map((p) => p.chartId).filter((x): x is string => Boolean(x)))]),
     loadGarments(db, ids),
     loadCommunityFeedback(db, ids),
     loadPersonalFeedback(db, userId),
+    loadMarketNotes(db, market),
   ]);
   const out = new Map<string, EngineResult>();
   for (const p of products) {
     const category = categories.find((c) => c.id === p.category.id)!;
+    const chart = p.chartId ? charts.get(p.chartId) ?? null : null;
+    let garment = garments.get(p.id) ?? null;
+    // A brand's real published chart beats product garment data that is only demonstration data.
+    if (garment?.isDemo && chart && !chart.isDemo) garment = null;
     out.set(
       p.id,
       await runEngine({
         profile,
         category,
         fitPreference: resolveFit(profile, category.slug, fitOverride),
-        chart: p.chartId ? charts.get(p.chartId) : null,
-        garment: garments.get(p.id) ?? null,
+        chart,
+        chartNote: chart ? chartMarketNote(p.brand.name, chart.market, market, notes.get(p.brand.id)) : null,
+        garment,
         product: { fitType: p.fitType as Fit, stretch: p.stretch as "none" },
         community: community.get(p.id) ?? null,
         personal: personal.get(`${p.brand.id}:${p.category.id}`) ?? null,
@@ -142,8 +152,9 @@ catalogRouter.get("/products", async (req, res) => {
   const f = parse(listSchema, req.query);
   const db = await getDb();
   const audience = audienceFor(req.user);
+  const market = marketFor(req);
   const { rows } = await db.query(
-    `${PRODUCT_SELECT("$1")}
+    `${PRODUCT_SELECT("$1", "$8")}
      WHERE p.is_active AND b.is_active
        AND ($2::text IS NULL OR p.name ILIKE '%' || $2 || '%' OR b.name ILIKE '%' || $2 || '%' OR c.name ILIKE '%' || $2 || '%')
        AND ($3::text[] IS NULL OR b.slug = ANY($3))
@@ -153,7 +164,7 @@ catalogRouter.get("/products", async (req, res) => {
        AND ($7::numeric IS NULL OR p.price_amount <= $7)
      ORDER BY p.created_at DESC, p.name
      LIMIT 500`,
-    [audience, f.search || null, csv(f.brand), csv(f.category), csv(f.fit), f.minPrice ?? null, f.maxPrice ?? null],
+    [audience, f.search || null, csv(f.brand), csv(f.category), csv(f.fit), f.minPrice ?? null, f.maxPrice ?? null, market],
   );
   let products = rows.map(mapProduct);
 
@@ -161,7 +172,7 @@ catalogRouter.get("/products", async (req, res) => {
   let profile: Profile | null = null;
   if (req.user) {
     profile = await loadProfileOrPrimary(db, req.user.id);
-    if (profile) recs = await recommendForProducts(products, profile, req.user.id);
+    if (profile) recs = await recommendForProducts(products, profile, req.user.id, undefined, market);
   }
   const rank = (p: ProductRow) => {
     const r = recs.get(p.id);
@@ -187,6 +198,7 @@ catalogRouter.get("/products", async (req, res) => {
     offset: f.offset,
     priceRange: priceRange[0],
     hasProfile: Boolean(profile),
+    market,
     products: page.map((p) => ({
       ...p,
       isSaved: saved.has(p.id),
@@ -197,9 +209,10 @@ catalogRouter.get("/products", async (req, res) => {
 
 catalogRouter.get("/products/:slug", async (req, res) => {
   const slug = parse(z.string().max(120), req.params.slug);
-  const q = parse(z.object({ fit: z.enum(["slim", "regular", "relaxed", "oversized"]).optional(), profileId: z.string().uuid().optional() }), req.query);
+  const q = parse(z.object({ fit: z.enum(["slim", "regular", "relaxed", "oversized"]).optional(), profileId: z.string().uuid().optional(), market: z.enum(["IN", "US", "UK_EU"]).optional() }), req.query);
   const db = await getDb();
-  const product = await findProduct(db, { slug }, audienceFor(req.user));
+  const market = marketFor(req);
+  const product = await findProduct(db, { slug }, audienceFor(req.user), market);
   if (!product) throw notFound("Product");
 
   const [charts, garments, feedback] = await Promise.all([
@@ -220,7 +233,7 @@ catalogRouter.get("/products/:slug", async (req, res) => {
     profile = await loadProfileOrPrimary(db, req.user.id, q.profileId);
     if (profile) {
       fitPreference = resolveFit(profile, product.category.slug, q.fit);
-      recommendation = (await recommendForProducts([product], profile, req.user.id, q.fit)).get(product.id) ?? null;
+      recommendation = (await recommendForProducts([product], profile, req.user.id, q.fit, market)).get(product.id) ?? null;
     }
     isSaved = Boolean((await db.query("SELECT 1 FROM saved_products WHERE user_id = $1 AND product_id = $2", [req.user.id, product.id])).rows.length);
   }
@@ -232,6 +245,7 @@ catalogRouter.get("/products/:slug", async (req, res) => {
     feedbackSummary: Object.fromEntries(feedback.rows.map((r) => [r.overall_fit as string, r.n as number])),
     recommendation,
     fitPreference,
+    market,
     profile: profile ? { id: profile.id, name: profile.name } : null,
   });
 });
@@ -240,14 +254,18 @@ catalogRouter.get("/products/:slug", async (req, res) => {
 catalogRouter.get("/categories/:slug/brands", async (req, res) => {
   const slug = parse(z.string().max(80), req.params.slug);
   const db = await getDb();
+  const market = marketFor(req);
+  const best = BEST_CHART_SQL("b.id", "c.id", "'menswear'", "$2");
   const { rows } = await db.query(
     `SELECT b.id, b.slug, b.name, b.country,
-       ${BEST_CHART_SQL("b.id", "c.id", "'menswear'")} AS "chartId",
+       ${best} AS "chartId",
+       (SELECT s.market FROM brand_size_charts s WHERE s.id = ${best}) AS "chartMarket",
+       (SELECT NOT s.is_demo FROM brand_size_charts s WHERE s.id = ${best}) AS "chartIsSourced",
        (SELECT count(*)::int FROM products p WHERE p.brand_id = b.id AND p.category_id = c.id AND p.is_active) AS "productCount"
      FROM brands b CROSS JOIN clothing_categories c
      WHERE c.slug = $1 AND b.is_active
      ORDER BY b.name`,
-    [slug],
+    [slug, market],
   );
   res.json({ brands: rows.filter((r) => r.chartId || (r.productCount as number) > 0) });
 });

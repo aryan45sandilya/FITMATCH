@@ -9,6 +9,7 @@ import { Button, Checkbox, EmptyState, ErrorState, Input, PageHeader, Select, cn
 import { api, qs } from "@/lib/api";
 import { FIT_OPTIONS } from "@/lib/labels";
 import type { Brand, Category, Product } from "@/lib/types";
+import { useSession } from "@/lib/session";
 import { useApi } from "@/lib/use-api";
 
 interface ListResponse { total: number; products: Product[]; priceRange: { min: number; max: number }; hasProfile: boolean }
@@ -29,6 +30,7 @@ function Discover() {
   const params = useSearchParams();
   const brands = useApi<{ brands: Brand[] }>("/brands");
   const cats = useApi<{ categories: Category[] }>("/categories");
+  const { market } = useSession();
 
   const filters = {
     search: params.get("search") ?? "",
@@ -40,7 +42,7 @@ function Discover() {
     sort: params.get("sort") ?? "recommended",
     fitsMe: params.get("fitsMe") === "true",
   };
-  const query = qs({ ...filters, fitsMe: filters.fitsMe ? "true" : undefined, limit: PAGE });
+  const query = qs({ ...filters, fitsMe: filters.fitsMe ? "true" : undefined, limit: PAGE, market });
 
   const [items, setItems] = useState<Product[]>([]);
   const [meta, setMeta] = useState<Omit<ListResponse, "products">>();
@@ -84,7 +86,7 @@ function Discover() {
   async function loadMore() {
     setMore(true);
     try {
-      const r = await api.get<ListResponse>(`/products${qs({ ...filters, fitsMe: filters.fitsMe ? "true" : undefined, limit: PAGE, offset: items.length })}`);
+      const r = await api.get<ListResponse>(`/products${qs({ ...filters, fitsMe: filters.fitsMe ? "true" : undefined, limit: PAGE, offset: items.length, market })}`);
       setItems((x) => [...x, ...r.products]);
     } finally {
       setMore(false);

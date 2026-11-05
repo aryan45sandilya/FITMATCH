@@ -1,4 +1,11 @@
-import type { BodyKey, Confidence, Fit, MatchQuality, MeasurementKey, PointStatus, Verification } from "./types";
+import type { BodyKey, ChartMarket, Confidence, Fit, Market, MatchQuality, MeasurementKey, PointStatus, Verification } from "./types";
+
+export const MARKET_OPTIONS: { value: Market; label: string; short: string }[] = [
+  { value: "IN", label: "India", short: "IN" },
+  { value: "US", label: "United States", short: "US" },
+  { value: "UK_EU", label: "UK & Europe", short: "UK/EU" },
+];
+export const MARKET_LABEL: Record<ChartMarket, string> = { IN: "India", US: "United States", UK_EU: "UK & Europe", GLOBAL: "Demo" };
 
 export const MEASUREMENT_LABEL: Record<MeasurementKey, string> = {
   chest: "Chest",
@@ -48,9 +55,9 @@ export const POINT_STATUS: Record<PointStatus, { label: string; tone: "success" 
   loose: { label: "Loose", tone: "danger" },
 };
 
-export const VERIFICATION: Record<Verification, { label: string; tone: "success" | "warning" | "danger" | "muted" }> = {
+export const VERIFICATION: Record<Verification, { label: string; tone: "success" | "warning" | "danger" | "muted" | "accent" }> = {
   verified: { label: "Verified", tone: "success" },
-  pending: { label: "Pending review", tone: "warning" },
+  pending: { label: "Brand chart · pending review", tone: "accent" },
   unverified: { label: "Unverified", tone: "muted" },
   rejected: { label: "Rejected", tone: "danger" },
 };

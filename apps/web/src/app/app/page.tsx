@@ -29,14 +29,15 @@ interface CompareRow { brand: { slug: string; name: string }; result: EngineResu
 const KEY_POINTS: BodyKey[] = ["chest", "shoulder", "waist", "hip", "inseam", "neck"];
 
 export default function OverviewPage() {
-  const { unit } = useSession();
+  const { unit, market } = useSession();
   const { data, error, loading, reload } = useApi<Dashboard>("/me/dashboard");
   const [preview, setPreview] = useState<CompareRow[] | null>(null);
 
   useEffect(() => {
     if (!data?.primaryProfile) return;
-    api.post<{ rows: CompareRow[] }>("/compare", { categorySlug: "t-shirts", record: false }).then((r) => setPreview(r.rows)).catch(() => setPreview([]));
-  }, [data?.primaryProfile]);
+    setPreview(null);
+    api.post<{ rows: CompareRow[] }>("/compare", { categorySlug: "t-shirts", record: false, market }).then((r) => setPreview(r.rows)).catch(() => setPreview([]));
+  }, [data?.primaryProfile, market]);
 
   if (error) return <ErrorState message={error.message} onRetry={reload} />;
   if (loading || !data) return <OverviewSkeleton />;

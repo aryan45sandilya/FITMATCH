@@ -6,12 +6,12 @@ export function audienceFor(user?: SessionUser | null): string {
   return user?.genderFit === "womenswear" ? "womenswear" : user?.genderFit === "menswear" ? "menswear" : "menswear";
 }
 
-export const PRODUCT_SELECT = (audienceParam: string) => `
+export const PRODUCT_SELECT = (audienceParam: string, marketParam: string) => `
   SELECT p.id, p.slug, p.name, p.description, p.fit_type, p.fabric, p.stretch, p.audience, p.price_amount, p.currency,
          p.image_urls, p.colorway, p.external_url, p.is_demo, p.is_active, p.created_at,
          b.id AS brand_id, b.slug AS brand_slug, b.name AS brand_name, b.website_url AS brand_website,
          c.id AS category_id, c.slug AS category_slug, c.name AS category_name,
-         COALESCE(p.size_chart_id, ${BEST_CHART_SQL("p.brand_id", "p.category_id", audienceParam)}) AS chart_id,
+         COALESCE(p.size_chart_id, ${BEST_CHART_SQL("p.brand_id", "p.category_id", audienceParam, marketParam)}) AS chart_id,
          COALESCE((SELECT array_agg(v.size_label ORDER BY v.sort_order) FROM product_variants v WHERE v.product_id = p.id AND v.is_offered), '{}') AS sizes,
          EXISTS (SELECT 1 FROM product_measurements m JOIN product_variants v ON v.id = m.variant_id WHERE v.product_id = p.id) AS has_garment_data
   FROM products p
@@ -68,10 +68,10 @@ export function mapProduct(r: Record<string, unknown>): ProductRow {
   };
 }
 
-export async function findProduct(q: Queryable, by: { id?: string; slug?: string }, audience: string): Promise<ProductRow | null> {
+export async function findProduct(q: Queryable, by: { id?: string; slug?: string }, audience: string, market: string): Promise<ProductRow | null> {
   const { rows } = await q.query(
-    `${PRODUCT_SELECT("$3")} WHERE ($1::uuid IS NULL OR p.id = $1::uuid) AND ($2::text IS NULL OR p.slug = $2) AND p.is_active LIMIT 1`,
-    [by.id ?? null, by.slug ?? null, audience],
+    `${PRODUCT_SELECT("$3", "$4")} WHERE ($1::uuid IS NULL OR p.id = $1::uuid) AND ($2::text IS NULL OR p.slug = $2) AND p.is_active LIMIT 1`,
+    [by.id ?? null, by.slug ?? null, audience, market],
   );
   return rows[0] ? mapProduct(rows[0]) : null;
 }

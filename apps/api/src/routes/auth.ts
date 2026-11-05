@@ -31,6 +31,7 @@ const signupSchema = z.object({
   email,
   password,
   genderFit: z.enum(["menswear", "womenswear", "unisex", "no_preference"]).optional(),
+  market: z.enum(["IN", "US", "UK_EU"]).optional(),
 });
 
 async function issueToken(q: Queryable, userId: string, kind: "verify_email" | "reset_password", hours: number) {
@@ -66,9 +67,9 @@ authRouter.post("/signup", limiter, async (req, res) => {
 
   const hash = await hashPassword(body.password);
   const { rows } = await db.query(
-    `INSERT INTO users (email, full_name, password_hash, gender_fit) VALUES ($1, $2, $3, $4)
-     RETURNING id, email, full_name, role, preferred_unit, gender_fit, email_verified_at, true AS has_password, false AS google_linked, created_at`,
-    [body.email, body.fullName, hash, body.genderFit ?? null],
+    `INSERT INTO users (email, full_name, password_hash, gender_fit, market) VALUES ($1, $2, $3, $4, COALESCE($5, 'IN'))
+     RETURNING id, email, full_name, role, preferred_unit, market, gender_fit, email_verified_at, true AS has_password, false AS google_linked, created_at`,
+    [body.email, body.fullName, hash, body.genderFit ?? null, body.market ?? null],
   );
   const u = mapUser(rows[0]!);
   const devVerificationUrl = await sendVerification(db, u);
@@ -155,6 +156,7 @@ authRouter.patch("/account", requireAuth, async (req, res) => {
     z.object({
       fullName: z.string().trim().min(1).max(120).optional(),
       preferredUnit: z.enum(["cm", "in"]).optional(),
+      market: z.enum(["IN", "US", "UK_EU"]).optional(),
       genderFit: z.enum(["menswear", "womenswear", "unisex", "no_preference"]).nullable().optional(),
     }),
     req.body,
@@ -165,9 +167,10 @@ authRouter.patch("/account", requireAuth, async (req, res) => {
        full_name = COALESCE($2, full_name),
        preferred_unit = COALESCE($3, preferred_unit),
        gender_fit = CASE WHEN $4::boolean THEN $5 ELSE gender_fit END,
+       market = COALESCE($6, market),
        updated_at = now()
      WHERE id = $1 RETURNING ${USER_COLUMNS}`,
-    [user(req).id, body.fullName ?? null, body.preferredUnit ?? null, body.genderFit !== undefined, body.genderFit ?? null],
+    [user(req).id, body.fullName ?? null, body.preferredUnit ?? null, body.genderFit !== undefined, body.genderFit ?? null, body.market ?? null],
   );
   res.json({ user: mapUser(rows[0]!) });
 });

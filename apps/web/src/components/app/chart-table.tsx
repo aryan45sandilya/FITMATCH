@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, ShieldCheck } from "lucide-react";
-import { MEASUREMENT_LABEL, VERIFICATION } from "@/lib/labels";
+import { MARKET_LABEL, MEASUREMENT_LABEL, VERIFICATION } from "@/lib/labels";
 import type { ChartData, GarmentData, MeasurementKey, Unit } from "@/lib/types";
 import { formatLength, formatRange } from "@/lib/units";
 import { DemoDataBadge } from "../brand";
@@ -75,7 +75,8 @@ export function Provenance({ chart, garment }: { chart?: ChartData | null; garme
         <Badge tone={meta.tone === "muted" ? "muted" : meta.tone}>{meta.label}</Badge>
       )}
       {isDemo && <DemoDataBadge />}
-      <span>{garment ? "Garment measurements" : chart?.basis === "garment" ? "Garment chart" : "Body measurement chart"}</span>
+      {chart && chart.market !== "GLOBAL" && !garment && <Badge tone="neutral">{MARKET_LABEL[chart.market]} chart</Badge>}
+      <span>{garment ? "Garment measurements" : chart?.basis === "garment" ? "Garment chart (finished garment)" : "Body measurement chart"}</span>
       {source && <span className="min-w-0">Source: {source}</span>}
       {collected && <span>Collected {new Date(collected).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</span>}
       {chart?.sourceUrl && (

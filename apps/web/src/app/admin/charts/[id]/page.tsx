@@ -14,6 +14,7 @@ import type { Category, ChartData, MeasurementKey, Verification } from "@/lib/ty
 import { useApi } from "@/lib/use-api";
 
 type Loaded = ChartData & { brandId: string; categoryId: number; notes: string | null };
+const MARKETS = [["UK_EU", "UK & Europe"], ["US", "United States"], ["IN", "India"], ["GLOBAL", "Global / demo"]] as const;
 
 export default function ChartEditor() {
   const { id } = useParams<{ id: string }>();
@@ -24,7 +25,7 @@ export default function ChartEditor() {
   const brands = useApi<{ brands: { id: string; name: string }[] }>("/admin/brands");
   const cats = useApi<{ categories: Category[] }>("/admin/categories");
 
-  const [meta, setMeta] = useState({ brandId: "", categoryId: "", audience: "menswear", name: "", basis: "body", source: "", sourceUrl: "", collectedAt: new Date().toISOString().slice(0, 10), notes: "" });
+  const [meta, setMeta] = useState({ brandId: "", categoryId: "", audience: "menswear", market: "UK_EU", name: "", basis: "body", source: "", sourceUrl: "", collectedAt: new Date().toISOString().slice(0, 10), notes: "" });
   const [keys, setKeys] = useState<MeasurementKey[]>(["chest", "waist"]);
   const [rows, setRows] = useState<GridRow<RangeCell>[]>(["S", "M", "L"].map((label) => ({ label, cells: {} })));
   const [errs, setErrs] = useState<Record<string, string>>({});
@@ -35,7 +36,7 @@ export default function ChartEditor() {
   useEffect(() => {
     const c = chart.data?.chart;
     if (!c) return;
-    setMeta({ brandId: c.brandId, categoryId: String(c.categoryId), audience: c.audience, name: c.name, basis: c.basis, source: c.isDemo ? "" : c.source, sourceUrl: c.sourceUrl ?? "", collectedAt: String(c.collectedAt).slice(0, 10), notes: c.notes ?? "" });
+    setMeta({ brandId: c.brandId, categoryId: String(c.categoryId), audience: c.audience, market: c.market, name: c.name, basis: c.basis, source: c.isDemo ? "" : c.source, sourceUrl: c.sourceUrl ?? "", collectedAt: String(c.collectedAt).slice(0, 10), notes: c.notes ?? "" });
     const used = new Set(c.sizes.flatMap((s) => Object.keys(s.points)));
     setKeys(ALL_KEYS.filter((k) => used.has(k)));
     setRows(c.sizes.map((s) => ({ label: s.label, cells: Object.fromEntries(Object.entries(s.points).map(([k, r]) => [k, { min: String(r!.min), max: String(r!.max) }])) })));
@@ -46,7 +47,7 @@ export default function ChartEditor() {
     setErrs({});
     setMsg(undefined);
     const body = {
-      brandId: meta.brandId, categoryId: Number(meta.categoryId), audience: meta.audience, name: meta.name, basis: meta.basis,
+      brandId: meta.brandId, categoryId: Number(meta.categoryId), audience: meta.audience, market: meta.market, name: meta.name, basis: meta.basis,
       source: meta.source, sourceUrl: meta.sourceUrl || null, collectedAt: meta.collectedAt, notes: meta.notes || null,
       sizes: rows.filter((r) => r.label.trim()).map((r) => ({
         label: r.label.trim(),
@@ -104,6 +105,9 @@ export default function ChartEditor() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Brand" htmlFor="c-brand" error={errs.brandId}><Select id="c-brand" value={meta.brandId} onChange={set("brandId")}><option value="">Choose…</option>{brands.data?.brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>
               <Field label="Category" htmlFor="c-cat" error={errs.categoryId}><Select id="c-cat" value={meta.categoryId} onChange={set("categoryId")}><option value="">Choose…</option>{cats.data?.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
+              <Field label="Market" htmlFor="c-market" hint="Which country/region's website this chart comes from.">
+                <Select id="c-market" value={meta.market} onChange={set("market")}>{MARKETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select>
+              </Field>
               <Field label="Name" htmlFor="c-name" error={errs.name}><Input id="c-name" value={meta.name} onChange={set("name")} placeholder="Men's tops — size guide" /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Audience" htmlFor="c-aud"><Select id="c-aud" value={meta.audience} onChange={set("audience")}>{["menswear", "womenswear", "unisex"].map((a) => <option key={a} value={a}>{a}</option>)}</Select></Field>
