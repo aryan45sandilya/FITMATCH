@@ -11,7 +11,7 @@ import { ProductImage, SaveButton } from "@/components/app/product";
 import { NoProfileCallout, RecommendationResult } from "@/components/app/recommendation";
 import { Badge, Button, ErrorState, LinkButton, Segmented, Skeleton, cn } from "@/components/ui/primitives";
 import { qs } from "@/lib/api";
-import { FEEDBACK_FIT, FIT_OPTIONS } from "@/lib/labels";
+import { FEEDBACK_FIT, FIT_OPTIONS, MARKET_LABEL } from "@/lib/labels";
 import { useSession } from "@/lib/session";
 import type { ChartData, EngineResult, Fit, GarmentData, Product } from "@/lib/types";
 import { formatPrice } from "@/lib/units";
@@ -30,9 +30,11 @@ interface Detail {
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const { unit, setUnit, market } = useSession();
+  const marketName = MARKET_LABEL[market];
   const [fit, setFit] = useState<Fit | null>(null);
   const [view, setView] = useState(0);
-  const [tab, setTab] = useState<"garment" | "chart">("garment");
+  // null = follow the data the recommendation used; set once the shopper picks a tab.
+  const [tabChoice, setTab] = useState<"garment" | "chart" | null>(null);
   const [feedback, setFeedback] = useState<FeedbackTarget | null>(null);
   const { data, error, loading, reload } = useApi<Detail>(`/products/${slug}${qs({ fit, market })}`);
 
@@ -44,6 +46,7 @@ export default function ProductPage() {
   const activeFit = fit ?? data.fitPreference;
   const views = p.imageUrls.length > 1 ? p.imageUrls : null;
   const feedbackTotal = Object.values(data.feedbackSummary).reduce((a, b) => a + b, 0);
+  const tab = tabChoice ?? (rec?.basis === "body_chart" ? "chart" : "garment");
   const showGarment = Boolean(data.garment) && (tab === "garment" || !data.chart);
 
   return (
@@ -113,7 +116,13 @@ export default function ProductPage() {
               </Button>
             )}
           </div>
-          {p.isDemo && <p className="mt-2 text-[12px] text-faint">Demo product: the link opens {p.brand.name}&apos;s website rather than a specific listing.</p>}
+          {p.isDemo && (
+            <p className="mt-2 text-[12px] text-faint">
+              {p.shopLinkIsMarket
+                ? <>Demo product: opens {p.brand.name}&apos;s {marketName} store, not a specific listing.</>
+                : <>{p.brand.name} has no {marketName} store on file, so this opens their main website.</>}
+            </p>
+          )}
         </div>
       </div>
 

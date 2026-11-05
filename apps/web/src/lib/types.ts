@@ -96,6 +96,8 @@ export interface Product {
   imageUrls: string[];
   colorway: string | null;
   externalUrl: string | null;
+  /** true when the shop link opens the brand's store for the shopper's market */
+  shopLinkIsMarket?: boolean;
   isDemo: boolean;
   brand: { id: string; slug: string; name: string; websiteUrl: string | null };
   category: { id: number; slug: string; name: string };

@@ -299,7 +299,13 @@ function ResultStep({ category, brand, product, unit, market, categoryName }: { 
               {p.externalUrl && (
                 <LinkButton href={p.externalUrl} size="sm" full>Shop at {p.brand.name} <ExternalLink className="size-3.5" /></LinkButton>
               )}
-              {p.isDemo && <p className="text-[11.5px] leading-relaxed text-faint">Demo product — the link opens the brand&apos;s website, not a specific listing.</p>}
+              {p.isDemo && (
+                <p className="text-[11.5px] leading-relaxed text-faint">
+                  {p.shopLinkIsMarket
+                    ? <>Demo product: opens {p.brand.name}&apos;s {MARKET_LABEL[market]} store, not a specific listing.</>
+                    : <>{p.brand.name} has no {MARKET_LABEL[market]} store on file, so this opens their main website.</>}
+                </p>
+              )}
             </div>
           </section>
         )}

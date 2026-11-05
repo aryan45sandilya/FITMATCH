@@ -71,10 +71,12 @@ catalogRouter.get("/brands/:slug", async (req, res) => {
   );
   const loaded = await loadCharts(db, charts.map((c) => c.id));
   const { rows: notes } = await db.query('SELECT market, note, checked_at AS "checkedAt" FROM brand_market_notes WHERE brand_id = $1', [brand.id]);
+  const { rows: links } = await db.query<{ market: string; url: string }>("SELECT market, url FROM brand_market_links WHERE brand_id = $1", [brand.id]);
   res.json({
     brand,
     charts: charts.map((c) => ({ categorySlug: (c as unknown as { category_slug: string }).category_slug, ...loaded.get(c.id)! })),
     marketNotes: notes,
+    marketLinks: Object.fromEntries(links.map((l) => [l.market, l.url])),
   });
 });
 

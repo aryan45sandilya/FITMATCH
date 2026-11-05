@@ -248,6 +248,18 @@ describe("markets", () => {
     expect(cheap.body.products.every((p: { price: number; currency: string }) => p.currency === "INR" && p.price <= 900)).toBe(true);
   });
 
+  it("links demo products to the brand's store for the shopper's market", async () => {
+    const hm = (m: string) => request(app).get(`/api/products/hm-regular-fit-cotton-tee?market=${m}`).then((r) => r.body.product);
+    expect(await hm("IN")).toMatchObject({ externalUrl: "https://www2.hm.com/en_in", shopLinkIsMarket: true });
+    expect(await hm("UK_EU")).toMatchObject({ externalUrl: "https://www2.hm.com/en_gb", shopLinkIsMarket: true });
+    // COS has no India store: falls back to the main site and says so.
+    const cos = (await request(app).get("/api/products/cos-relaxed-heavyweight-tee?market=IN")).body.product;
+    expect(cos.shopLinkIsMarket).toBe(false);
+    expect(cos.externalUrl).toBe("https://www.cos.com");
+    const brand = (await request(app).get("/api/brands/tommy-hilfiger")).body;
+    expect(brand.marketLinks.IN).toBe("https://in.tommy.com");
+  });
+
   it("lets admins set a real price for one market", async () => {
     const admin = request.agent(app);
     await admin.post("/api/auth/login").send(ADMIN);

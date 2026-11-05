@@ -121,6 +121,8 @@ export async function seed(db: Database, opts: { adminEmail?: string; adminPassw
   });
   log(`seeded ${MEASUREMENT_POINTS.length} measurement points, ${CATEGORIES.length} categories, ${BRANDS.length} brands, ${PRODUCTS.length} demo products`);
 
+  const links = await seedBrandMarketLinks(db);
+  log(`seeded ${links} brand store links`);
   const prices = await seedDemoPrices(db);
   log(`seeded ${prices} demo market prices`);
   const sourced = await seedSourcedCharts(db);
@@ -139,6 +141,40 @@ export async function seed(db: Database, opts: { adminEmail?: string; adminPassw
       await db.query("UPDATE users SET role = 'admin' WHERE lower(email) = lower($1)", [opts.adminEmail]);
     }
   }
+}
+
+/**
+ * Official regional stores, checked 2026-11-05/06. Levi's US/UK store pages are region-locked
+ * from outside those countries, so levi.com (which routes visitors to their own store) is used.
+ * COS has no India store.
+ */
+export const BRAND_MARKET_LINKS: Record<string, Partial<Record<"IN" | "US" | "UK_EU", string>>> = {
+  hm: { IN: "https://www2.hm.com/en_in", US: "https://www2.hm.com/en_us", UK_EU: "https://www2.hm.com/en_gb" },
+  zara: { IN: "https://www.zara.com/in/", US: "https://www.zara.com/us/", UK_EU: "https://www.zara.com/uk/" },
+  "us-polo-assn": { IN: "https://uspoloassn.in", US: "https://uspoloassn.com", UK_EU: "https://www.uspoloassn.co.uk" },
+  uniqlo: { IN: "https://www.uniqlo.com/in/en/", US: "https://www.uniqlo.com/us/en/", UK_EU: "https://www.uniqlo.com/uk/en/" },
+  levis: { IN: "https://levi.in", US: "https://www.levi.com/", UK_EU: "https://www.levi.com/" },
+  "tommy-hilfiger": { IN: "https://in.tommy.com", US: "https://usa.tommy.com", UK_EU: "https://uk.tommy.com" },
+  nike: { IN: "https://www.nike.in", US: "https://www.nike.com/", UK_EU: "https://www.nike.com/gb/" },
+  adidas: { IN: "https://www.adidas.co.in", US: "https://www.adidas.com/us", UK_EU: "https://www.adidas.co.uk" },
+  mango: { IN: "https://shop.mango.com/in/en", US: "https://shop.mango.com/us/en", UK_EU: "https://shop.mango.com/gb/en" },
+  cos: { US: "https://www.cos.com/en-us", UK_EU: "https://www.cos.com/en-gb" },
+};
+
+export async function seedBrandMarketLinks(db: Database): Promise<number> {
+  let n = 0;
+  for (const [slug, links] of Object.entries(BRAND_MARKET_LINKS)) {
+    for (const [market, url] of Object.entries(links)) {
+      const res = await db.query(
+        `INSERT INTO brand_market_links (brand_id, market, url, checked_at)
+         SELECT id, $2, $3, '2026-11-06' FROM brands WHERE slug = $1
+         ON CONFLICT (brand_id, market) DO NOTHING RETURNING brand_id`,
+        [slug, market, url],
+      );
+      n += res.rows.length;
+    }
+  }
+  return n;
 }
 
 /**

@@ -10,7 +10,7 @@ export const PRODUCT_SELECT = (audienceParam: string, marketParam: string) => `
   SELECT p.id, p.slug, p.name, p.description, p.fit_type, p.fabric, p.stretch, p.audience,
          COALESCE(mp.amount, p.price_amount) AS price_amount, COALESCE(mp.currency, p.currency) AS currency,
          p.image_urls, p.colorway, p.external_url, p.is_demo, p.is_active, p.created_at,
-         b.id AS brand_id, b.slug AS brand_slug, b.name AS brand_name, b.website_url AS brand_website,
+         b.id AS brand_id, b.slug AS brand_slug, b.name AS brand_name, b.website_url AS brand_website, bml.url AS brand_market_url,
          c.id AS category_id, c.slug AS category_slug, c.name AS category_name,
          COALESCE(p.size_chart_id, ${BEST_CHART_SQL("p.brand_id", "p.category_id", audienceParam, marketParam)}) AS chart_id,
          COALESCE((SELECT array_agg(v.size_label ORDER BY v.sort_order) FROM product_variants v WHERE v.product_id = p.id AND v.is_offered), '{}') AS sizes,
@@ -18,7 +18,8 @@ export const PRODUCT_SELECT = (audienceParam: string, marketParam: string) => `
   FROM products p
   JOIN brands b ON b.id = p.brand_id
   JOIN clothing_categories c ON c.id = p.category_id
-  LEFT JOIN product_prices mp ON mp.product_id = p.id AND mp.market = ${marketParam}`;
+  LEFT JOIN product_prices mp ON mp.product_id = p.id AND mp.market = ${marketParam}
+  LEFT JOIN brand_market_links bml ON bml.brand_id = b.id AND bml.market = ${marketParam}`;
 
 export interface ProductRow {
   id: string;
@@ -34,6 +35,8 @@ export interface ProductRow {
   imageUrls: string[];
   colorway: string | null;
   externalUrl: string | null;
+  /** true when the shop link goes to the brand's store for the requested market */
+  shopLinkIsMarket: boolean;
   isDemo: boolean;
   isActive: boolean;
   createdAt: string;
@@ -58,11 +61,13 @@ export function mapProduct(r: Record<string, unknown>): ProductRow {
     currency: (r.currency as string).trim(),
     imageUrls: (r.image_urls as string[]) ?? [],
     colorway: (r.colorway as string) ?? null,
-    externalUrl: (r.external_url as string) ?? null,
+    // Demo products only link to the brand's home page, so send shoppers to the store for their market.
+    externalUrl: r.is_demo ? ((r.brand_market_url as string) ?? (r.external_url as string) ?? null) : ((r.external_url as string) ?? null),
+    shopLinkIsMarket: Boolean(r.is_demo && r.brand_market_url),
     isDemo: r.is_demo as boolean,
     isActive: r.is_active as boolean,
     createdAt: new Date(r.created_at as string).toISOString(),
-    brand: { id: r.brand_id as string, slug: r.brand_slug as string, name: r.brand_name as string, websiteUrl: (r.brand_website as string) ?? null },
+    brand: { id: r.brand_id as string, slug: r.brand_slug as string, name: r.brand_name as string, websiteUrl: ((r.brand_market_url as string) ?? (r.brand_website as string)) ?? null },
     category: { id: r.category_id as number, slug: r.category_slug as string, name: r.category_name as string },
     chartId: (r.chart_id as string) ?? null,
     sizes: (r.sizes as string[]) ?? [],

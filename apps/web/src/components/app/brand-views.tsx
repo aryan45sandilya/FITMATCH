@@ -113,7 +113,7 @@ function chartFor(charts: BrandChart[], category: string, market: Market) {
 }
 
 export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHref: string; findHref?: string }) {
-  const { data, error, loading, reload } = useApi<{ brand: Brand; charts: BrandChart[]; marketNotes: { market: Market; note: string }[] }>(`/brands/${slug}`);
+  const { data, error, loading, reload } = useApi<{ brand: Brand; charts: BrandChart[]; marketNotes: { market: Market; note: string }[]; marketLinks: Partial<Record<Market, string>> }>(`/brands/${slug}`);
   const categories = useApi<{ categories: Category[] }>("/categories");
   const { unit, setUnit, user, market: sessionMarket } = useSession();
   const [active, setActive] = useState<string | null>(null);
@@ -162,8 +162,8 @@ export function BrandDetail({ slug, backHref, findHref }: { slug: string; backHr
         <div className="flex flex-col gap-3 md:items-end">
           <div className="flex flex-wrap gap-2">
             {findHref && <LinkButton href={findHref} size="sm">Find my size</LinkButton>}
-            {data.brand.websiteUrl && (
-              <LinkButton href={data.brand.websiteUrl} size="sm" variant="secondary">
+            {(data.marketLinks[market] ?? data.brand.websiteUrl) && (
+              <LinkButton href={(data.marketLinks[market] ?? data.brand.websiteUrl)!} size="sm" variant="secondary" title={data.marketLinks[market] ? `${data.brand.name} ${MARKET_LABEL[market]} store` : `No ${MARKET_LABEL[market]} store on file — opens the main site`}>
                 Visit site <ExternalLink className="size-3.5" />
               </LinkButton>
             )}
