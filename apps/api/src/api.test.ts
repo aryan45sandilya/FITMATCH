@@ -236,6 +236,30 @@ describe("markets", () => {
     expect(by.zara.chartIsSourced).toBe(false);
   });
 
+  it("prices products in the shopper's market currency", async () => {
+    const get = (m: string) => request(app).get(`/api/products?market=${m}&search=Regular Fit Cotton`).then((r) => r.body);
+    const [india, us, uk] = await Promise.all([get("IN"), get("US"), get("UK_EU")]);
+    expect(india.products[0]).toMatchObject({ currency: "INR", price: 799 });
+    expect(us.products[0]).toMatchObject({ currency: "USD", price: 12.99 });
+    expect(uk.products[0]).toMatchObject({ currency: "GBP", price: 9.99 });
+    expect(india.priceRange.currency).toBe("INR");
+    // Price filters apply in the market's currency
+    const cheap = await request(app).get("/api/products?market=IN&maxPrice=900");
+    expect(cheap.body.products.every((p: { price: number; currency: string }) => p.currency === "INR" && p.price <= 900)).toBe(true);
+  });
+
+  it("lets admins set a real price for one market", async () => {
+    const admin = request.agent(app);
+    await admin.post("/api/auth/login").send(ADMIN);
+    const list = await admin.get("/api/admin/products?search=Regular Fit Cotton T-shirt");
+    const id = list.body.products[0].id;
+    expect((await admin.put(`/api/admin/products/${id}/prices`).send({ prices: { IN: { amount: 899, currency: "INR" } } })).status).toBe(200);
+    const detail = await admin.get(`/api/admin/products/${id}`);
+    expect(detail.body.prices.find((p: { market: string }) => p.market === "IN")).toMatchObject({ amount: 899, isDemo: false });
+    const shopper = await request(app).get("/api/products/hm-regular-fit-cotton-tee?market=IN");
+    expect(shopper.body.product.price).toBe(899);
+  });
+
   it("stores the market chosen at sign-up", async () => {
     const res = await request(app).post("/api/auth/signup").send({ fullName: "Sam", email: `m${Date.now()}@test.local`, password: "correct-horse-9", market: "UK_EU" });
     expect(res.body.user.market).toBe("UK_EU");

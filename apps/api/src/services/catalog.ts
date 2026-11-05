@@ -7,7 +7,8 @@ export function audienceFor(user?: SessionUser | null): string {
 }
 
 export const PRODUCT_SELECT = (audienceParam: string, marketParam: string) => `
-  SELECT p.id, p.slug, p.name, p.description, p.fit_type, p.fabric, p.stretch, p.audience, p.price_amount, p.currency,
+  SELECT p.id, p.slug, p.name, p.description, p.fit_type, p.fabric, p.stretch, p.audience,
+         COALESCE(mp.amount, p.price_amount) AS price_amount, COALESCE(mp.currency, p.currency) AS currency,
          p.image_urls, p.colorway, p.external_url, p.is_demo, p.is_active, p.created_at,
          b.id AS brand_id, b.slug AS brand_slug, b.name AS brand_name, b.website_url AS brand_website,
          c.id AS category_id, c.slug AS category_slug, c.name AS category_name,
@@ -16,7 +17,8 @@ export const PRODUCT_SELECT = (audienceParam: string, marketParam: string) => `
          EXISTS (SELECT 1 FROM product_measurements m JOIN product_variants v ON v.id = m.variant_id WHERE v.product_id = p.id) AS has_garment_data
   FROM products p
   JOIN brands b ON b.id = p.brand_id
-  JOIN clothing_categories c ON c.id = p.category_id`;
+  JOIN clothing_categories c ON c.id = p.category_id
+  LEFT JOIN product_prices mp ON mp.product_id = p.id AND mp.market = ${marketParam}`;
 
 export interface ProductRow {
   id: string;

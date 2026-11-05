@@ -121,6 +121,8 @@ export async function seed(db: Database, opts: { adminEmail?: string; adminPassw
   });
   log(`seeded ${MEASUREMENT_POINTS.length} measurement points, ${CATEGORIES.length} categories, ${BRANDS.length} brands, ${PRODUCTS.length} demo products`);
 
+  const prices = await seedDemoPrices(db);
+  log(`seeded ${prices} demo market prices`);
   const sourced = await seedSourcedCharts(db);
   log(`seeded ${sourced} sourced brand size charts (pending verification)`);
 
@@ -137,6 +139,34 @@ export async function seed(db: Database, opts: { adminEmail?: string; adminPassw
       await db.query("UPDATE users SET role = 'admin' WHERE lower(email) = lower($1)", [opts.adminEmail]);
     }
   }
+}
+
+/**
+ * Demonstration prices per market for demo products, derived from the US price and rounded to
+ * local price points (₹…99 / £…99). Clearly demo data; never overwrites a price an admin set.
+ */
+export const demoMarketPrice = (usd: number) => ({
+  US: { amount: usd, currency: "USD" },
+  IN: { amount: Math.max(499, Math.round((usd * 62) / 100) * 100 - 1), currency: "INR" },
+  UK_EU: { amount: Math.max(4.99, Math.round(usd * 0.8) - 0.01), currency: "GBP" },
+});
+
+export async function seedDemoPrices(db: Database): Promise<number> {
+  const { rows } = await db.query<{ id: string; price_amount: number | null }>(
+    "SELECT id, price_amount FROM products WHERE is_demo AND price_amount IS NOT NULL",
+  );
+  let n = 0;
+  for (const p of rows) {
+    for (const [market, price] of Object.entries(demoMarketPrice(p.price_amount!))) {
+      const res = await db.query(
+        `INSERT INTO product_prices (product_id, market, amount, currency, is_demo) VALUES ($1,$2,$3,$4,true)
+         ON CONFLICT (product_id, market) DO NOTHING RETURNING product_id`,
+        [p.id, market, Math.round(price.amount * 100) / 100, price.currency],
+      );
+      n += res.rows.length;
+    }
+  }
+  return n;
 }
 
 /**

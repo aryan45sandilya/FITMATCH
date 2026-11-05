@@ -160,8 +160,8 @@ catalogRouter.get("/products", async (req, res) => {
        AND ($3::text[] IS NULL OR b.slug = ANY($3))
        AND ($4::text[] IS NULL OR c.slug = ANY($4))
        AND ($5::text[] IS NULL OR p.fit_type = ANY($5))
-       AND ($6::numeric IS NULL OR p.price_amount >= $6)
-       AND ($7::numeric IS NULL OR p.price_amount <= $7)
+       AND ($6::numeric IS NULL OR COALESCE(mp.amount, p.price_amount) >= $6)
+       AND ($7::numeric IS NULL OR COALESCE(mp.amount, p.price_amount) <= $7)
      ORDER BY p.created_at DESC, p.name
      LIMIT 500`,
     [audience, f.search || null, csv(f.brand), csv(f.category), csv(f.fit), f.minPrice ?? null, f.maxPrice ?? null, market],
@@ -189,8 +189,11 @@ catalogRouter.get("/products", async (req, res) => {
     ? new Set((await db.query<{ product_id: string }>("SELECT product_id FROM saved_products WHERE user_id = $1", [req.user.id])).rows.map((r) => r.product_id))
     : new Set<string>();
 
-  const { rows: priceRange } = await db.query<{ min: number; max: number }>(
-    "SELECT floor(min(price_amount))::int AS min, ceil(max(price_amount))::int AS max FROM products WHERE is_active",
+  const { rows: priceRange } = await db.query<{ min: number; max: number; currency: string }>(
+    `SELECT floor(min(COALESCE(mp.amount, p.price_amount)))::int AS min, ceil(max(COALESCE(mp.amount, p.price_amount)))::int AS max,
+            mode() WITHIN GROUP (ORDER BY COALESCE(mp.currency, p.currency)) AS currency
+     FROM products p LEFT JOIN product_prices mp ON mp.product_id = p.id AND mp.market = $1 WHERE p.is_active`,
+    [market],
   );
   res.json({
     total,

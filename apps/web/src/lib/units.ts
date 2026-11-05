@@ -32,14 +32,25 @@ export function formatWeight(kg: number | null | undefined, unit: Unit) {
   return unit === "in" ? `${Math.round(kg / KG_PER_LB)} lb` : `${Math.round(kg * 10) / 10} kg`;
 }
 
+export function currencySymbol(currency: string) {
+  try {
+    return new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", { style: "currency", currency }).formatToParts(0).find((p) => p.type === "currency")?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 function trimZeros(s: string) {
   return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
 }
 
+/** Locale per currency so grouping and symbols look native (₹4,899 · £9.99 · $12.99). */
+const CURRENCY_LOCALE: Record<string, string> = { INR: "en-IN", GBP: "en-GB", EUR: "en-IE", USD: "en-US" };
+
 export function formatPrice(amount: number | null, currency: string) {
   if (amount === null) return "";
   try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
+    return new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", { style: "currency", currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
   } catch {
     return `${currency} ${amount}`;
   }

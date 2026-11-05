@@ -208,7 +208,11 @@ adminRouter.get("/products/:id", async (req, res) => {
      WHERE v.product_id = $1 GROUP BY v.id ORDER BY v.sort_order`,
     [id],
   );
-  res.json({ product: { ...rows[0], currency: String(rows[0].currency).trim() }, variants });
+  const { rows: prices } = await db.query(
+    `SELECT market, amount, trim(currency) AS currency, is_demo AS "isDemo" FROM product_prices WHERE product_id = $1`,
+    [id],
+  );
+  res.json({ product: { ...rows[0], currency: String(rows[0].currency).trim() }, variants, prices });
 });
 
 adminRouter.post("/products", async (req, res) => {
@@ -250,6 +254,29 @@ adminRouter.patch("/products/:id", async (req, res) => {
   if (!sets.length) throw new HttpError(422, "Nothing to update.", "validation_error");
   const { rows } = await db.query(`UPDATE products SET ${sets.join(", ")}, updated_at = now() WHERE id = $1 RETURNING id`, params);
   if (!rows[0]) throw notFound("Product");
+  res.json({ ok: true });
+});
+
+/** Set or clear the price of a product in each market (null removes it; the base price is the fallback). */
+const marketPrice = z.object({ amount: z.number().min(0).max(10_000_000), currency: z.string().trim().length(3).toUpperCase() }).nullable();
+adminRouter.put("/products/:id/prices", async (req, res) => {
+  const id = parse(z.string().uuid(), req.params.id);
+  const body = parse(z.object({ prices: z.object({ IN: marketPrice.optional(), US: marketPrice.optional(), UK_EU: marketPrice.optional() }) }), req.body);
+  const db = await getDb();
+  await db.tx(async (q) => {
+    const { rows } = await q.query("SELECT 1 FROM products WHERE id = $1", [id]);
+    if (!rows.length) throw notFound("Product");
+    for (const [market, price] of Object.entries(body.prices)) {
+      if (price === undefined) continue;
+      if (price === null) await q.query("DELETE FROM product_prices WHERE product_id = $1 AND market = $2", [id, market]);
+      else
+        await q.query(
+          `INSERT INTO product_prices (product_id, market, amount, currency, is_demo) VALUES ($1,$2,$3,$4,false)
+           ON CONFLICT (product_id, market) DO UPDATE SET amount = EXCLUDED.amount, currency = EXCLUDED.currency, is_demo = false, updated_at = now()`,
+          [id, market, price.amount, price.currency],
+        );
+    }
+  });
   res.json({ ok: true });
 });
 

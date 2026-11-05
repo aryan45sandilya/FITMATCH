@@ -19,12 +19,17 @@ interface AdminProduct {
   fitType: string; fabric: string | null; stretch: string; audience: string; price: number | null; currency: string; imageUrls: string[];
   colorway: string | null; externalUrl: string | null; isActive: boolean; isDemo: boolean;
 }
+interface MarketPrice { market: "IN" | "US" | "UK_EU"; amount: number; currency: string; isDemo: boolean }
+const PRICE_MARKETS = [["IN", "India", "INR"], ["US", "United States", "USD"], ["UK_EU", "UK & Europe", "GBP"]] as const;
+
 interface Variant { id: string; label: string; isOffered: boolean; measurements: { key: MeasurementKey; valueCm: number; source: string; collectedAt: string; verification: Verification }[] }
 
 export default function AdminProductEdit() {
   const { id } = useParams<{ id: string }>();
   const toast = useToast();
-  const { data, error, loading, reload } = useApi<{ product: AdminProduct; variants: Variant[] }>(`/admin/products/${id}`);
+  const { data, error, loading, reload } = useApi<{ product: AdminProduct; variants: Variant[]; prices: MarketPrice[] }>(`/admin/products/${id}`);
+  const [prices, setPrices] = useState<Record<string, { amount: string; currency: string; isDemo: boolean }>>({});
+  const [savingPrices, setSavingPrices] = useState(false);
   const cats = useApi<{ categories: Category[] }>("/admin/categories");
   const brands = useApi<{ brands: { id: string; name: string }[] }>("/admin/brands");
   const [p, setP] = useState<AdminProduct | null>(null);
@@ -44,6 +49,7 @@ export default function AdminProductEdit() {
   useEffect(() => {
     if (!data) return;
     setP(data.product);
+    setPrices(Object.fromEntries(data.prices.map((x) => [x.market, { amount: String(x.amount), currency: x.currency, isDemo: x.isDemo }])));
     const used = new Set(data.variants.flatMap((v) => v.measurements.map((m) => m.key)));
     setKeys(ALL_KEYS.filter((k) => used.has(k)));
     setRows(data.variants.map((v) => ({ label: v.label, cells: Object.fromEntries(v.measurements.map((m) => [m.key, String(m.valueCm)])) })));
@@ -117,6 +123,24 @@ export default function AdminProductEdit() {
     }
   }
 
+  async function savePrices() {
+    setSavingPrices(true);
+    try {
+      await api.put(`/admin/products/${id}/prices`, {
+        prices: Object.fromEntries(PRICE_MARKETS.map(([m, , cur]) => {
+          const v = prices[m];
+          return [m, v && v.amount.trim() ? { amount: Number(v.amount), currency: v.currency || cur } : null];
+        })),
+      });
+      toast("Market prices saved");
+      await reload();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Couldn't save prices", "error");
+    } finally {
+      setSavingPrices(false);
+    }
+  }
+
   const chartOptions = (charts.data?.charts ?? []).filter((c) => c.categoryId === p.categoryId);
 
   return (
@@ -168,6 +192,26 @@ export default function AdminProductEdit() {
           <p className="mt-2 text-[11.5px] text-faint">Remember to save details after changing images.</p>
         </Panel>
       </div>
+
+      <Panel title="Prices by market" className="mt-5">
+        <p className="mb-4 text-[13px] text-muted">Brands price each market separately. Leave a market empty to fall back to the base price above.</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {PRICE_MARKETS.map(([m, label, cur]) => {
+            const v = prices[m] ?? { amount: "", currency: cur, isDemo: false };
+            return (
+              <Field key={m} label={label} htmlFor={`price-${m}`} hint={v.isDemo ? "Demo price — replace with the brand's real price." : undefined}>
+                <div className="flex gap-2">
+                  <Input id={`price-${m}`} inputMode="decimal" value={v.amount} placeholder="—"
+                    onChange={(e) => setPrices((x) => ({ ...x, [m]: { ...v, amount: e.target.value.replace(/[^d.]/g, ""), isDemo: false } }))} />
+                  <Input aria-label={`${label} currency`} className="w-20" maxLength={3} value={v.currency}
+                    onChange={(e) => setPrices((x) => ({ ...x, [m]: { ...v, currency: e.target.value.toUpperCase() } }))} />
+                </div>
+              </Field>
+            );
+          })}
+        </div>
+        <Button className="mt-4" variant="secondary" onClick={savePrices} loading={savingPrices}>Save market prices</Button>
+      </Panel>
 
       <Panel title="Sizes & garment measurements" className="mt-5">
         <p className="mb-4 text-[13px] leading-relaxed text-muted">Flat-measured finished garment, in centimetres. Enter circumferences in full (double a flat half-chest). Leave a cell empty to omit it. Provenance applies to every value saved.</p>

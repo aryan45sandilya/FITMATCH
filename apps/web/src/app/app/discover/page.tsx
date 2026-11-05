@@ -9,10 +9,11 @@ import { Button, Checkbox, EmptyState, ErrorState, Input, PageHeader, Select, cn
 import { api, qs } from "@/lib/api";
 import { FIT_OPTIONS } from "@/lib/labels";
 import type { Brand, Category, Product } from "@/lib/types";
+import { currencySymbol } from "@/lib/units";
 import { useSession } from "@/lib/session";
 import { useApi } from "@/lib/use-api";
 
-interface ListResponse { total: number; products: Product[]; priceRange: { min: number; max: number }; hasProfile: boolean }
+interface ListResponse { total: number; products: Product[]; priceRange: { min: number; max: number; currency: string }; hasProfile: boolean }
 const PAGE = 12;
 
 export default function DiscoverPage() {
@@ -192,7 +193,7 @@ function FilterPanel({
   brands: Brand[]; categories: Category[];
   filters: { brand: string[]; category: string[]; fit: string[]; minPrice: string; maxPrice: string; fitsMe: boolean };
   toggle: (k: "brand" | "category" | "fit", v: string) => void; update: (n: Record<string, string | null>) => void;
-  priceRange?: { min: number; max: number }; hasProfile: boolean;
+  priceRange?: { min: number; max: number; currency: string }; hasProfile: boolean;
 }) {
   const [min, setMin] = useState(filters.minPrice);
   const [max, setMax] = useState(filters.maxPrice);
@@ -228,7 +229,7 @@ function FilterPanel({
         </fieldset>
       ))}
       <fieldset>
-        <legend className="eyebrow mb-3">Price (USD)</legend>
+        <legend className="eyebrow mb-3">Price ({priceRange ? `${currencySymbol(priceRange.currency)} ${priceRange.currency}` : "…"})</legend>
         <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); update({ minPrice: min || null, maxPrice: max || null }); }}>
           <Input aria-label="Minimum price" inputMode="numeric" placeholder={String(priceRange?.min ?? 0)} value={min} onChange={(e) => setMin(e.target.value.replace(/\D/g, ""))} className="h-9" onBlur={() => update({ minPrice: min || null })} />
           <span className="text-faint">–</span>
