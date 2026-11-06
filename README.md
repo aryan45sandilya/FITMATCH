@@ -128,11 +128,29 @@ FITMATCH/
 
 ## Deployment
 
-| Part | Platform | Notes |
-|---|---|---|
-| Database | Neon | Set `DATABASE_URL`, then run `npm run db:migrate` |
-| API | Railway | Root `src/api` · `npm run build` / `npm start` · set `DATABASE_URL`, `APP_ORIGIN`, `ALLOWED_ORIGINS` |
-| Web | Vercel | Root `src/web` · set `API_URL` to the Railway URL |
+Everything runs on **Vercel**: two projects from this repo plus a Neon Postgres database from the Vercel Marketplace.
+
+| Part | Vercel project | Root directory | Environment variables |
+|---|---|---|---|
+| Database | Storage → Neon (Marketplace) | — | Adds `DATABASE_URL` to the API project |
+| API | `fitmatch-api` | `src/api` | `NODE_ENV=production`, `APP_ORIGIN`, `ALLOWED_ORIGINS`, `DATABASE_URL` |
+| Web | `fitmatch-web` | `src/web` | `API_URL` |
+
+**1. API project.** Import the repo in Vercel, set Root Directory to `src/api` and leave the framework as *Other*. [`src/api/vercel.json`](src/api/vercel.json) builds the TypeScript and routes every request to the Express app in [`src/api/api/index.js`](src/api/api/index.js).
+
+**2. Database.** In the API project, open *Storage → Create → Neon*, then connect it. That adds `DATABASE_URL`. Copy it and run the migrations and seed **once** from your machine:
+
+```bash
+DATABASE_URL="postgres://..." ADMIN_EMAIL="you@example.com" ADMIN_PASSWORD="a-long-password" npm run db:seed
+```
+
+`db:seed` applies the migrations first. Later schema changes only need `npm run db:migrate`.
+
+**3. Web project.** Import the repo again, set Root Directory to `src/web` (Next.js is detected), and set `API_URL` to the API URL, e.g. `https://fitmatch-api.vercel.app`. The site proxies `/api/*` to it, so the session cookie stays on the site's own domain.
+
+**4. Finish the API.** Set `APP_ORIGIN` and `ALLOWED_ORIGINS` to the web URL, e.g. `https://fitmatch-web.vercel.app`, plus `NODE_ENV=production`, then redeploy the API.
+
+`API_URL` is read when the site is built, so redeploy the web project after changing it.
 
 ## Roadmap
 

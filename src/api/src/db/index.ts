@@ -84,7 +84,8 @@ export async function getDb(): Promise<Database> {
     instance = fromPool(
       new pg.Pool({
         connectionString: config.databaseUrl,
-        max: 10,
+        // Serverless instances each hold their own pool, so keep it small there.
+        max: process.env.VERCEL ? 3 : 10,
         ssl: config.databaseUrl.includes("sslmode=disable") ? undefined : { rejectUnauthorized: false },
       }),
     );
